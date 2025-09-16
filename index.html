@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Task Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --dark-bg: #212529;
+            --light-bg: #f5f7fa;
+            --primary-color: #0d6efd;
+            --text-color: #e9ecef;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-bg);
+        }
+
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--light-bg);
+        }
+
+        .login-form, .register-form, .forgot-password-form {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .main-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: var(--dark-bg);
+            color: var(--text-color);
+            padding: 1rem;
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(0);
+            z-index: 1030;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-250px);
+        }
+
+        .sidebar-header {
+            text-align: center;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #495057;
+            margin-bottom: 1rem;
+        }
+
+        .sidebar a {
+            color: var(--text-color);
+            text-decoration: none;
+            display: block;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+
+        .sidebar a.active, .sidebar a:hover {
+            background-color: #495057;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .navbar-top {
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            border: none;
+        }
+
+        .card-header {
+            background-color: #e9ecef;
+            border-bottom: none;
+            font-weight: bold;
+        }
+
+        .form-control, .btn {
+            border-radius: 8px;
+        }
+
+        .alert-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                height: 100%;
+                top: 0;
+                left: 0;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <div id="auth-pages" class="login-container">
+            <div id="login-page">
+                <div class="login-form text-center">
+                    <h2 class="mb-4">Login</h2>
+                    <div id="login-alert-container"></div>
+                    <form id="login-form">
+                        <div class="mb-3">
+                            <input type="email" class="form-control" id="login-email" placeholder="Email" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" class="form-control" id="login-password" placeholder="Password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mb-3">Login</button>
+                    </form>
+                    <a href="#" id="forgot-password-link" class="d-block mb-2">Forgot Password?</a>
+                    <a href="#" id="create-account-link" class="d-block">Create New Account</a>
+                </div>
+            </div>
+
+            <div id="register-page" class="d-none">
+                <div class="register-form text-center">
+                    <h2 class="mb-4">Create Account</h2>
+                    <div id="register-alert-container"></div>
+                    <form id="register-form">
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="register-name" placeholder="Full Name" required>
+                        </div>
+                         <div class="mb-3">
+                            <input type="text" class="form-control" id="register-location" placeholder="Location" required>
+                        </div>
+                         <div class="mb-3">
+                            <input type="text" class="form-control" id="register-project" placeholder="Project Name" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="tel" class="form-control" id="register-mobile" placeholder="Mobile Number" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="email" class="form-control" id="register-email" placeholder="Email" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" class="form-control" id="register-password" placeholder="Password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mb-3">Register</button>
+                    </form>
+                    <a href="#" id="back-to-login-link" class="d-block">Back to Login</a>
+                </div>
+            </div>
+
+            <div id="forgot-password-page" class="d-none">
+                <div class="forgot-password-form text-center">
+                    <h2 class="mb-4">Forgot Password</h2>
+                    <div id="forgot-password-alert-container"></div>
+                    <form id="forgot-password-form">
+                        <div class="mb-3">
+                            <input type="email" class="form-control" id="forgot-password-email" placeholder="Email" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mb-3">Send Reset Link</button>
+                    </form>
+                    <a href="#" id="back-to-login-link2" class="d-block">Back to Login</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="main-app" class="main-wrapper d-none">
+            <div id="sidebar" class="sidebar">
+                <div class="sidebar-header">
+                    <h4>Task Flow</h4>
+                </div>
+                <ul class="nav flex-column" id="sidebar-menu">
+                    <li class="nav-item mb-2">
+                        <a href="#" class="nav-link active" data-page="dashboard-page">
+                            <i class="fa-solid fa-house me-2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2 employee-only">
+                        <a href="#" class="nav-link" data-page="tasks-page">
+                            <i class="fa-solid fa-list-check me-2"></i> My Tasks
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2 manager-only">
+                        <a href="#" class="nav-link" data-page="create-team-page">
+                            <i class="fa-solid fa-users me-2"></i> My Team
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2 manager-only">
+                        <a href="#" class="nav-link" data-page="assign-tasks-page">
+                            <i class="fa-solid fa-calendar-plus me-2"></i> Assign Tasks
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2 admin-only">
+                        <a href="#" class="nav-link" data-page="admin-panel-page">
+                            <i class="fa-solid fa-user-gear me-2"></i> Admin Panel
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a href="#" class="nav-link" data-page="profile-page">
+                            <i class="fa-solid fa-user me-2"></i> Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" id="logout-btn">
+                            <i class="fa-solid fa-right-from-bracket me-2"></i> Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="main-content">
+                <nav class="navbar navbar-top">
+                    <div class="container-fluid">
+                        <button class="btn btn-outline-secondary d-md-none" id="sidebar-toggle">
+                            <i class="fa-solid fa-bars"></i>
+                        </button>
+                        <h4 class="mb-0" id="page-title">Dashboard</h4>
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-circle-user fa-2x me-2"></i>
+                            <span id="user-display-name" class="fw-bold"></span>
+                        </div>
+                    </div>
+                </nav>
+
+                <div id="dashboard-page" class="content-page">
+                    <div id="dashboard-content"></div>
+                </div>
+
+                <div id="tasks-page" class="content-page d-none">
+                    <h2 class="mb-4">My Tasks for Today</h2>
+                    <div id="tasks-list" class="row g-4">
+                        <p class="text-center">Loading tasks...</p>
+                    </div>
+                </div>
+
+                <div id="create-team-page" class="content-page d-none">
+                    <div class="card p-4">
+                        <h2 class="mb-4">Create Your Team</h2>
+                        <div id="team-alert-container"></div>
+                        <form id="create-team-form">
+                            <div class="mb-3">
+                                <label for="team-members-select" class="form-label">Select Employees</label>
+                                <select class="form-select" id="team-members-select" multiple size="10"></select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Team</button>
+                        </form>
+                        <hr class="my-4">
+                        <h4 class="mb-3">Current Team Members</h4>
+                        <div id="current-team-list" class="list-group">
+                            <p class="text-center">No team members saved yet.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="assign-tasks-page" class="content-page d-none">
+                    <div class="card p-4">
+                        <h2 class="mb-4">Assign Daily Tasks</h2>
+                        <div id="assign-tasks-alert-container"></div>
+                        <form id="assign-tasks-form">
+                            <div class="mb-3">
+                                <label for="assign-team-member-select" class="form-label">Select Team Member</label>
+                                <select class="form-select" id="assign-team-member-select" required></select>
+                            </div>
+                            <div id="targets-container">
+                                <div class="mb-3 target-input-group">
+                                    <label for="target-1" class="form-label">Target 1</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control target-input" required>
+                                        <button class="btn btn-outline-danger remove-target-btn" type="button" disabled><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary mb-3" id="add-target-btn">Add More Target</button>
+                            <button type="submit" class="btn btn-primary d-block w-100">Assign Tasks</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="admin-panel-page" class="content-page d-none">
+                    <div class="card p-4">
+                        <h2 class="mb-4">User & Role Management</h2>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="user-select" class="form-label">Select a User</label>
+                                <select class="form-select" id="user-select"></select>
+                            </div>
+                        </div>
+                        <div id="user-details-panel" class="d-none">
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h4 class="mb-3">Performance Metrics</h4>
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <p class="mb-1"><strong>Total Tasks Given:</strong> <span id="tasks-given-count">0</span></p>
+                                            <p class="mb-1"><strong>Tasks Completed:</strong> <span id="tasks-completed-count">0</span></p>
+                                        </div>
+                                    </div>
+                                    <div class="card mb-3">
+                                        <div class="card-body text-center">
+                                            <canvas id="completion-chart" width="200" height="200"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h4 class="mb-3">Assign Role</h4>
+                                    <div id="role-alert-container"></div>
+                                    <div class="input-group mb-3">
+                                        <select class="form-select" id="role-select">
+                                            <option value="employee">Employee</option>
+                                            <option value="manager">Manager</option>
+                                            <option value="admin">Admin</option>
+                                        </select>
+                                        <button class="btn btn-primary" type="button" id="assign-role-btn">Assign Role</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="profile-page" class="content-page d-none">
+                    <div class="card p-4">
+                        <h2 class="mb-4">My Profile</h2>
+                        <div id="profile-alert-container"></div>
+                        <form id="profile-form">
+                            <div class="mb-3">
+                                <label for="profile-name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="profile-name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="profile-location" class="form-label">Location</label>
+                                <input type="text" class="form-control" id="profile-location" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="profile-project" class="form-label">Project Name</label>
+                                <input type="text" class="form-control" id="profile-project" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="profile-mobile" class="form-label">Mobile Number</label>
+                                <input type="tel" class="form-control" id="profile-mobile" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="profile-email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="profile-email" disabled>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Update Profile</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        import { getDatabase, ref, set, get, child, onValue, update, push } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDjzKZOgCjjCDBH2q8kpuNRFGMkLFPA4m0",
+            authDomain: "staff-jms.firebaseapp.com",
+            databaseURL: "https://staff-jms-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "staff-jms",
+            storageBucket: "staff-jms.firebasestorage.app",
+            messagingSenderId: "127509104745",
+            appId: "1:127509104745:web:64e7c71d596a8668003af8"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // UI Element References
+        const appContainer = document.getElementById('app-container');
+        const authPages = document.getElementById('auth-pages');
+        const mainApp = document.getElementById('main-app');
+        const loginPage = document.getElementById('login-page');
+        const registerPage = document.getElementById('register-page');
+        const forgotPasswordPage = document.getElementById('forgot-password-page');
+
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const forgotPasswordForm = document.getElementById('forgot-password-form');
+
+        const loginAlertContainer = document.getElementById('login-alert-container');
+        const registerAlertContainer = document.getElementById('register-alert-container');
+        const forgotPasswordAlertContainer = document.getElementById('forgot-password-alert-container');
+
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebarMenu = document.getElementById('sidebar-menu');
+        const pageTitle = document.getElementById('page-title');
+        const userDisplayName = document.getElementById('user-display-name');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        // Page specific containers
+        const dashboardPage = document.getElementById('dashboard-page');
+        const dashboardContent = document.getElementById('dashboard-content');
+        const tasksPage = document.getElementById('tasks-page');
+        const tasksList = document.getElementById('tasks-list');
+        const createTeamPage = document.getElementById('create-team-page');
+        const createTeamForm = document.getElementById('create-team-form');
+        const teamMembersSelect = document.getElementById('team-members-select');
+        const currentTeamList = document.getElementById('current-team-list');
+        const assignTasksPage = document.getElementById('assign-tasks-page');
+        const assignTasksForm = document.getElementById('assign-tasks-form');
+        const assignTeamMemberSelect = document.getElementById('assign-team-member-select');
+        const targetsContainer = document.getElementById('targets-container');
+        const addTargetBtn = document.getElementById('add-target-btn');
+        const adminPanelPage = document.getElementById('admin-panel-page');
+        const userSelect = document.getElementById('user-select');
+        const userDetailsPanel = document.getElementById('user-details-panel');
+        const assignRoleBtn = document.getElementById('assign-role-btn');
+        const roleSelect = document.getElementById('role-select');
+        const tasksGivenCount = document.getElementById('tasks-given-count');
+        const tasksCompletedCount = document.getElementById('tasks-completed-count');
+        const completionChartCtx = document.getElementById('completion-chart');
+        let completionChart;
+        const profilePage = document.getElementById('profile-page');
+        const profileForm = document.getElementById('profile-form');
+        const profileNameInput = document.getElementById('profile-name');
+        const profileMobileInput = document.getElementById('profile-mobile');
+        const profileEmailInput = document.getElementById('profile-email');
+        const profileLocationInput = document.getElementById('profile-location');
+        const profileProjectInput = document.getElementById('profile-project');
+
+        // Utility functions
+        function showPage(pageId) {
+            document.querySelectorAll('.content-page').forEach(page => page.classList.add('d-none'));
+            document.getElementById(pageId).classList.remove('d-none');
+            pageTitle.textContent = document.querySelector(`[data-page="${pageId}"]`).textContent.trim();
+            document.querySelectorAll('.sidebar a').forEach(link => link.classList.remove('active'));
+            document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+            if (window.innerWidth <= 768) {
+                sidebar.classList.add('collapsed');
+            }
+        }
+
+        function showAlert(container, message, type = 'danger') {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.role = 'alert';
+            alert.innerHTML = `${message} <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
+            container.innerHTML = '';
+            container.appendChild(alert);
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }, 5000);
+        }
+
+        function getCurrentDate() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Authentication and User State Management
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                authPages.classList.add('d-none');
+                mainApp.classList.remove('d-none');
+                const userRef = ref(db, `users/${user.uid}`);
+                const snapshot = await get(userRef);
+                const userData = snapshot.val();
+                
+                // Set default admin role on first login if email matches
+                if (user.email === 'admin2025@gmail.com' && (!userData || userData.role !== 'admin')) {
+                     await set(userRef, {
+                        name: 'Admin',
+                        email: 'admin2025@gmail.com',
+                        role: 'admin'
+                    });
+                    user.role = 'admin';
+                } else if (userData) {
+                    user.role = userData.role || 'employee';
+                } else {
+                    user.role = 'employee';
+                }
+                
+                userDisplayName.textContent = userData ? userData.name : user.displayName;
+                await updateUIBasedOnRole(user.role);
+                showPage('dashboard-page');
+            } else {
+                authPages.classList.remove('d-none');
+                mainApp.classList.add('d-none');
+                showAuthPage('login-page');
+            }
+        });
+
+        function showAuthPage(pageId) {
+            loginPage.classList.add('d-none');
+            registerPage.classList.add('d-none');
+            forgotPasswordPage.classList.add('d-none');
+            document.getElementById(pageId).classList.remove('d-none');
+        }
+
+        async function updateUIBasedOnRole(role) {
+            document.querySelectorAll('.employee-only, .manager-only, .admin-only').forEach(el => el.classList.add('d-none'));
+            document.querySelectorAll('.sidebar a').forEach(link => link.classList.remove('active'));
+            
+            dashboardContent.innerHTML = '';
+
+            if (role === 'admin') {
+                document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('d-none'));
+                await loadAdminDashboard();
+            } else if (role === 'manager') {
+                document.querySelectorAll('.manager-only').forEach(el => el.classList.remove('d-none'));
+                dashboardContent.innerHTML = `<h3>Hello, ${userDisplayName.textContent}!</h3><p>Welcome to the Manager Dashboard. Use the navigation to manage your team and assign tasks.</p>`;
+            } else { // employee
+                document.querySelectorAll('.employee-only').forEach(el => el.classList.remove('d-none'));
+                dashboardContent.innerHTML = `<h3>Hello, ${userDisplayName.textContent}!</h3><p>Welcome to the Employee Dashboard. Here you can see your daily tasks.</p>`;
+                await loadTasks('tasks-page');
+            }
+        }
+        
+        // --- Event Listeners ---
+        // Auth Page Navigation
+        document.getElementById('create-account-link').addEventListener('click', (e) => { e.preventDefault(); showAuthPage('register-page'); });
+        document.getElementById('back-to-login-link').addEventListener('click', (e) => { e.preventDefault(); showAuthPage('login-page'); });
+        document.getElementById('forgot-password-link').addEventListener('click', (e) => { e.preventDefault(); showAuthPage('forgot-password-page'); });
+        document.getElementById('back-to-login-link2').addEventListener('click', (e) => { e.preventDefault(); showAuthPage('login-page'); });
+
+        // Sidebar Navigation
+        sidebarMenu.addEventListener('click', (e) => {
+            const link = e.target.closest('a');
+            if (link && link.dataset.page) {
+                e.preventDefault();
+                const pageId = link.dataset.page;
+                showPage(pageId);
+                // Load data for the selected page
+                if (pageId === 'tasks-page') loadTasks(pageId);
+                if (pageId === 'create-team-page') loadEmployeesForTeam();
+                if (pageId === 'assign-tasks-page') loadManagerTeamForAssign();
+                if (pageId === 'admin-panel-page') loadAllUsersForAdmin();
+                if (pageId === 'profile-page') loadProfile();
+            }
+        });
+
+        // Sidebar Toggle for Mobile
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+        });
+
+        // --- Core Functionality ---
+
+        // Login
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = loginForm['login-email'].value;
+            const password = loginForm['login-password'].value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                showAlert(loginAlertContainer, `Login failed: ${error.message}`);
+            }
+        });
+
+        // Register
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = registerForm['register-name'].value;
+            const location = registerForm['register-location'].value;
+            const project = registerForm['register-project'].value;
+            const mobile = registerForm['register-mobile'].value;
+            const email = registerForm['register-email'].value;
+            const password = registerForm['register-password'].value;
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                await set(ref(db, `users/${user.uid}`), {
+                    name: name,
+                    location: location,
+                    project: project,
+                    mobile: mobile,
+                    email: email,
+                    role: 'employee' // Default role
+                });
+                await updateProfile(user, { displayName: name });
+                showAlert(registerAlertContainer, 'Account created successfully! Please log in.', 'success');
+                setTimeout(() => showAuthPage('login-page'), 2000);
+            } catch (error) {
+                showAlert(registerAlertContainer, `Registration failed: ${error.message}`);
+            }
+        });
+
+        // Forgot Password
+        forgotPasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = forgotPasswordForm['forgot-password-email'].value;
+            try {
+                await sendPasswordResetEmail(auth, email);
+                showAlert(forgotPasswordAlertContainer, 'Password reset email sent!', 'success');
+            } catch (error) {
+                showAlert(forgotPasswordAlertContainer, `Error: ${error.message}`);
+            }
+        });
+
+        // Logout
+        logoutBtn.addEventListener('click', () => signOut(auth));
+
+        // Employee Task Management
+        async function loadTasks() {
+            tasksList.innerHTML = '<p class="text-center">Loading tasks...</p>';
+            const userId = auth.currentUser.uid;
+            const today = getCurrentDate();
+            const tasksRef = ref(db, 'assigned_tasks');
+
+            onValue(tasksRef, (snapshot) => {
+                const tasksData = snapshot.val();
+                let hasTasks = false;
+                tasksList.innerHTML = '';
+                if (tasksData) {
+                    const filteredTasks = Object.entries(tasksData).filter(([key, task]) => 
+                        task.userId === userId && task.date === today
+                    );
+
+                    if (filteredTasks.length > 0) {
+                        hasTasks = true;
+                        filteredTasks.forEach(([taskId, task]) => {
+                            const card = document.createElement('div');
+                            card.className = 'col-lg-6 mb-4';
+                            card.innerHTML = `
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Targets:</h5>
+                                        <ul class="list-group list-group-flush mb-3">
+                                            ${task.targets.map(t => `<li class="list-group-item">${t}</li>`).join('')}
+                                        </ul>
+                                        <p><strong>Status:</strong> <span class="badge bg-${task.completed ? 'success' : 'warning'}">${task.completed ? 'Completed' : 'Pending'}</span></p>
+                                        ${!task.completed ? `<button class="btn btn-primary btn-sm mark-complete-btn" data-id="${taskId}">Mark as Complete</button>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                            tasksList.appendChild(card);
+                        });
+
+                        document.querySelectorAll('.mark-complete-btn').forEach(button => {
+                            button.addEventListener('click', async (e) => {
+                                const taskId = e.target.dataset.id;
+                                const taskRef = ref(db, `assigned_tasks/${taskId}`);
+                                await update(taskRef, { completed: true });
+                                showAlert(document.getElementById('tasks-page'), 'Task status updated!', 'success');
+                            });
+                        });
+                    }
+                }
+                if (!hasTasks) {
+                    tasksList.innerHTML = '<div class="col-12"><p class="text-center">No tasks assigned for today. Go to the dashboard.</p></div>';
+                }
+            });
+        }
+
+        // Manager Create Team
+        async function loadEmployeesForTeam() {
+            const allUsersRef = ref(db, 'users');
+            teamMembersSelect.innerHTML = '';
+            
+            const snapshot = await get(allUsersRef);
+            const usersData = snapshot.val();
+            const employees = Object.entries(usersData || {}).filter(([uid, user]) => user.role === 'employee');
+
+            employees.forEach(([uid, user]) => {
+                const option = document.createElement('option');
+                option.value = uid;
+                option.textContent = `${user.name} - ${user.location || 'N/A'} (${user.project || 'N/A'})`;
+                teamMembersSelect.appendChild(option);
+            });
+            loadCurrentTeam();
+        }
+
+        async function loadCurrentTeam() {
+            const managerId = auth.currentUser.uid;
+            const teamRef = ref(db, `teams/${managerId}`);
+            currentTeamList.innerHTML = '<p class="text-center">Loading current team...</p>';
+
+            const snapshot = await get(teamRef);
+            const teamData = snapshot.val();
+            currentTeamList.innerHTML = '';
+            
+            if (teamData) {
+                const teamMemberUids = Object.values(teamData);
+                const usersRef = ref(db, 'users');
+                const usersSnapshot = await get(usersRef);
+                const usersData = usersSnapshot.val();
+                
+                teamMemberUids.forEach(uid => {
+                    if (usersData[uid]) {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                        li.innerHTML = `
+                            ${usersData[uid].name} - ${usersData[uid].location || 'N/A'} (${usersData[uid].project || 'N/A'})
+                            <button class="btn btn-sm btn-outline-danger remove-member-btn" data-id="${uid}">
+                                <i class="fa-solid fa-user-minus"></i> Remove
+                            </button>
+                        `;
+                        currentTeamList.appendChild(li);
+                    }
+                });
+
+                document.querySelectorAll('.remove-member-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const uidToRemove = e.target.dataset.id;
+                        const managerTeamRef = ref(db, `teams/${managerId}`);
+                        const currentTeamSnapshot = await get(managerTeamRef);
+                        const team = currentTeamSnapshot.val();
+                        if(team) {
+                            const indexToRemove = Object.keys(team).find(key => team[key] === uidToRemove);
+                            if(indexToRemove) {
+                                await set(ref(db, `teams/${managerId}/${indexToRemove}`), null);
+                                loadCurrentTeam();
+                                showAlert(document.getElementById('team-alert-container'), 'Team member removed!', 'success');
+                            }
+                        }
+                    });
+                });
+            } else {
+                currentTeamList.innerHTML = '<p class="text-center">No team members saved yet.</p>';
+            }
+        }
+        
+        createTeamForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const selectedUids = Array.from(teamMembersSelect.selectedOptions).map(option => option.value);
+            const managerId = auth.currentUser.uid;
+            const teamRef = ref(db, `teams/${managerId}`);
+            
+            await set(teamRef, selectedUids);
+            showAlert(document.getElementById('team-alert-container'), 'Team saved successfully!', 'success');
+            loadCurrentTeam();
+        });
+
+        // Manager Assign Tasks
+        async function loadManagerTeamForAssign() {
+            const managerId = auth.currentUser.uid;
+            const teamRef = ref(db, `teams/${managerId}`);
+            assignTeamMemberSelect.innerHTML = '<option value="" disabled selected>Select a Team Member</option>';
+            
+            const snapshot = await get(teamRef);
+            const teamData = snapshot.val();
+            
+            if (teamData) {
+                const teamMemberUids = Object.values(teamData);
+                const usersRef = ref(db, 'users');
+                const usersSnapshot = await get(usersRef);
+                const usersData = usersSnapshot.val();
+                
+                teamMemberUids.forEach(uid => {
+                    if (usersData[uid]) {
+                        const option = document.createElement('option');
+                        option.value = uid;
+                        option.textContent = `${usersData[uid].name} - ${usersData[uid].location || 'N/A'} (${usersData[uid].project || 'N/A'})`;
+                        assignTeamMemberSelect.appendChild(option);
+                    }
+                });
+            } else {
+                showAlert(document.getElementById('assign-tasks-alert-container'), 'You have no team members assigned. Go to My Team to create one.', 'warning');
+            }
+        }
+
+        addTargetBtn.addEventListener('click', () => {
+            const targetCount = targetsContainer.querySelectorAll('.target-input-group').length + 1;
+            const newTargetGroup = document.createElement('div');
+            newTargetGroup.className = 'mb-3 target-input-group';
+            newTargetGroup.innerHTML = `
+                <label for="target-${targetCount}" class="form-label">Target ${targetCount}</label>
+                <div class="input-group">
+                    <input type="text" class="form-control target-input" required>
+                    <button class="btn btn-outline-danger remove-target-btn" type="button"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `;
+            targetsContainer.appendChild(newTargetGroup);
+            updateRemoveButtons();
+        });
+
+        targetsContainer.addEventListener('click', (e) => {
+            if (e.target.closest('.remove-target-btn')) {
+                const targetGroup = e.target.closest('.target-input-group');
+                if (targetsContainer.querySelectorAll('.target-input-group').length > 1) {
+                    targetGroup.remove();
+                    updateRemoveButtons();
+                }
+            }
+        });
+
+        function updateRemoveButtons() {
+            const removeBtns = targetsContainer.querySelectorAll('.remove-target-btn');
+            removeBtns.forEach(btn => {
+                btn.disabled = removeBtns.length === 1;
+            });
+        }
+        updateRemoveButtons();
+
+        assignTasksForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const managerId = auth.currentUser.uid;
+            const userId = assignTeamMemberSelect.value;
+            const targets = Array.from(targetsContainer.querySelectorAll('.target-input'))
+                                .map(input => input.value.trim()).filter(Boolean);
+            const today = getCurrentDate();
+            
+            if (targets.length === 0) {
+                showAlert(document.getElementById('assign-tasks-alert-container'), 'Please add at least one target.', 'danger');
+                return;
+            }
+
+            try {
+                const newTaskId = push(ref(db, 'assigned_tasks')).key;
+                await set(ref(db, `assigned_tasks/${newTaskId}`), {
+                    managerId: managerId,
+                    userId: userId,
+                    targets: targets,
+                    date: today,
+                    completed: false
+                });
+                showAlert(document.getElementById('assign-tasks-alert-container'), 'Tasks assigned successfully!', 'success');
+                assignTasksForm.reset();
+                targetsContainer.innerHTML = `
+                    <div class="mb-3 target-input-group">
+                        <label for="target-1" class="form-label">Target 1</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control target-input" required>
+                            <button class="btn btn-outline-danger remove-target-btn" type="button" disabled><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                showAlert(document.getElementById('assign-tasks-alert-container'), `Failed to assign tasks: ${error.message}`, 'danger');
+            }
+        });
+
+        // Admin Dashboard
+        async function loadAdminDashboard() {
+            dashboardContent.innerHTML = `
+                <h3 class="mb-4">Hello, Admin!</h3>
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 bg-success-subtle border-success">
+                            <div class="card-body">
+                                <h5 class="card-title text-success">Assigned Users</h5>
+                                <p class="card-text">Users who have been assigned at least one task.</p>
+                                <ul id="assigned-users-list" class="list-group list-group-flush"></ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 bg-warning-subtle border-warning">
+                            <div class="card-body">
+                                <h5 class="card-title text-warning">Unassigned Users</h5>
+                                <p class="card-text">Employees who have not been assigned any tasks yet.</p>
+                                <ul id="unassigned-users-list" class="list-group list-group-flush"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const assignedList = document.getElementById('assigned-users-list');
+            const unassignedList = document.getElementById('unassigned-users-list');
+
+            assignedList.innerHTML = '<p class="text-center">Loading...</p>';
+            unassignedList.innerHTML = '<p class="text-center">Loading...</p>';
+            
+            const [usersSnapshot, tasksSnapshot] = await Promise.all([
+                get(ref(db, 'users')),
+                get(ref(db, 'assigned_tasks'))
+            ]);
+
+            const usersData = usersSnapshot.val() || {};
+            const tasksData = tasksSnapshot.val() || {};
+            const assignedUserIds = new Set();
+
+            Object.values(tasksData).forEach(task => assignedUserIds.add(task.userId));
+
+            assignedList.innerHTML = '';
+            unassignedList.innerHTML = '';
+            
+            Object.entries(usersData).forEach(([uid, user]) => {
+                if (user.role === 'employee') {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item';
+                    li.textContent = `${user.name} - ${user.location || 'N/A'} (${user.project || 'N/A'})`;
+                    
+                    if (assignedUserIds.has(uid)) {
+                        assignedList.appendChild(li);
+                    } else {
+                        unassignedList.appendChild(li);
+                    }
+                }
+            });
+            
+            if (assignedList.innerHTML === '') assignedList.innerHTML = '<p class="text-muted text-center mt-3">No users have been assigned tasks yet.</p>';
+            if (unassignedList.innerHTML === '') unassignedList.innerHTML = '<p class="text-muted text-center mt-3">All employees have been assigned tasks.</p>';
+        }
+
+        // Admin Panel
+        async function loadAllUsersForAdmin() {
+            const allUsersRef = ref(db, 'users');
+            userSelect.innerHTML = '<option value="" disabled selected>Select a User</option>';
+
+            const snapshot = await get(allUsersRef);
+            const usersData = snapshot.val();
+            
+            Object.entries(usersData || {}).forEach(([uid, user]) => {
+                const option = document.createElement('option');
+                option.value = uid;
+                option.textContent = user.name;
+                userSelect.appendChild(option);
+            });
+            userDetailsPanel.classList.add('d-none');
+        }
+
+        userSelect.addEventListener('change', async () => {
+            const selectedUserId = userSelect.value;
+            if (!selectedUserId) {
+                userDetailsPanel.classList.add('d-none');
+                return;
+            }
+
+            userDetailsPanel.classList.remove('d-none');
+            // Load user data
+            const userRef = ref(db, `users/${selectedUserId}`);
+            const userSnapshot = await get(userRef);
+            const userData = userSnapshot.val();
+            roleSelect.value = userData.role;
+
+            // Load performance metrics
+            const tasksRef = ref(db, 'assigned_tasks');
+            const tasksSnapshot = await get(tasksRef);
+            const tasksData = tasksSnapshot.val();
+
+            let totalTasks = 0;
+            let completedTasks = 0;
+            if (tasksData) {
+                Object.values(tasksData).forEach(task => {
+                    if (task.userId === selectedUserId) {
+                        totalTasks++;
+                        if (task.completed) {
+                            completedTasks++;
+                        }
+                    }
+                });
+            }
+            
+            tasksGivenCount.textContent = totalTasks;
+            tasksCompletedCount.textContent = completedTasks;
+            
+            const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+            const pendingRate = 100 - completionRate;
+
+            if (completionChart) completionChart.destroy();
+            completionChart = new Chart(completionChartCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'Pending'],
+                    datasets: [{
+                        data: [completionRate, pendingRate],
+                        backgroundColor: ['#198754', '#ffc107'],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    return `${label}: ${value.toFixed(1)}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+        assignRoleBtn.addEventListener('click', async () => {
+            const userId = userSelect.value;
+            const newRole = roleSelect.value;
+            const userRef = ref(db, `users/${userId}`);
+
+            if (auth.currentUser.uid === userId) {
+                 showAlert(document.getElementById('role-alert-container'), 'Cannot change your own role.', 'danger');
+                 return;
+            }
+            
+            try {
+                await update(userRef, { role: newRole });
+                showAlert(document.getElementById('role-alert-container'), `Role assigned to ${newRole} successfully!`, 'success');
+            } catch (error) {
+                showAlert(document.getElementById('role-alert-container'), `Failed to assign role: ${error.message}`, 'danger');
+            }
+        });
+
+        // Profile Page
+        async function loadProfile() {
+            const user = auth.currentUser;
+            const userRef = ref(db, `users/${user.uid}`);
+            const snapshot = await get(userRef);
+            const userData = snapshot.val();
+            
+            profileNameInput.value = userData.name || '';
+            profileMobileInput.value = userData.mobile || '';
+            profileEmailInput.value = userData.email || '';
+            profileLocationInput.value = userData.location || '';
+            profileProjectInput.value = userData.project || '';
+        }
+
+        profileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = auth.currentUser;
+            const userRef = ref(db, `users/${user.uid}`);
+            const updatedName = profileNameInput.value;
+            const updatedMobile = profileMobileInput.value;
+            const updatedLocation = profileLocationInput.value;
+            const updatedProject = profileProjectInput.value;
+
+            try {
+                await update(userRef, {
+                    name: updatedName,
+                    mobile: updatedMobile,
+                    location: updatedLocation,
+                    project: updatedProject
+                });
+                await updateProfile(user, { displayName: updatedName });
+                userDisplayName.textContent = updatedName;
+                showAlert(document.getElementById('profile-alert-container'), 'Profile updated successfully!', 'success');
+            } catch (error) {
+                showAlert(document.getElementById('profile-alert-container'), `Failed to update profile: ${error.message}`, 'danger');
+            }
+        });
+
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
