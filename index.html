@@ -3,21 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee Task Management</title>
+    <title>Maheshwari Computers - Task Flow</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --dark-bg: #212529;
-            --light-bg: #f5f7fa;
+            --dark-bg: #2b3035;
+            --light-bg: #f8f9fa;
+            --secondary-bg: #e9ecef;
             --primary-color: #0d6efd;
-            --text-color: #e9ecef;
+            --secondary-color: #6c757d;
+            --text-color: #ffffff;
+            --header-color: #343a40;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--light-bg);
+            color: #343a40;
         }
 
         .login-container {
@@ -30,9 +34,9 @@
 
         .login-form, .register-form, .forgot-password-form {
             background-color: #fff;
-            padding: 2rem;
+            padding: 2.5rem;
             border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
             max-width: 400px;
             width: 100%;
         }
@@ -43,38 +47,45 @@
         }
 
         .sidebar {
-            width: 250px;
+            width: 280px;
             background-color: var(--dark-bg);
             color: var(--text-color);
-            padding: 1rem;
+            padding: 1.5rem 1rem;
             transition: transform 0.3s ease-in-out;
             transform: translateX(0);
             z-index: 1030;
+            flex-shrink: 0;
         }
 
         .sidebar.collapsed {
-            transform: translateX(-250px);
+            transform: translateX(-280px);
         }
 
         .sidebar-header {
             text-align: center;
             padding-bottom: 1rem;
             border-bottom: 1px solid #495057;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .sidebar-header h4 {
+            color: #fff;
+            font-weight: 600;
         }
 
         .sidebar a {
             color: var(--text-color);
             text-decoration: none;
             display: block;
-            padding: 0.75rem 1rem;
+            padding: 0.75rem 1.25rem;
             margin-bottom: 0.5rem;
-            border-radius: 5px;
-            transition: background-color 0.2s;
+            border-radius: 8px;
+            transition: background-color 0.2s, transform 0.2s;
         }
 
         .sidebar a.active, .sidebar a:hover {
             background-color: #495057;
+            transform: translateX(5px);
         }
 
         .main-content {
@@ -86,7 +97,7 @@
         .navbar-top {
             background-color: #fff;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-            padding: 1rem;
+            padding: 1rem 1.5rem;
             border-radius: 10px;
             margin-bottom: 2rem;
         }
@@ -96,13 +107,19 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
             border: none;
         }
-
+        
         .card-header {
-            background-color: #e9ecef;
+            background-color: var(--secondary-bg);
             border-bottom: none;
             font-weight: bold;
+            border-radius: 10px 10px 0 0;
         }
-
+        
+        .card-title {
+            color: var(--header-color);
+            font-weight: 600;
+        }
+        
         .form-control, .btn {
             border-radius: 8px;
         }
@@ -117,6 +134,40 @@
         .form-check-input:checked {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
+        }
+        
+        .certificate-container {
+            background-color: #fff;
+            border: 5px solid #0d6efd;
+            padding: 3rem;
+            text-align: center;
+            font-family: 'Times New Roman', serif;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .certificate-header {
+            font-family: 'Georgia', serif;
+            color: #c4403d;
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .certificate-text {
+            font-size: 1.2rem;
+            line-height: 1.8;
+        }
+        
+        .certificate-signature {
+            margin-top: 3rem;
+            text-align: left;
+        }
+        
+        .certificate-signature p {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
         }
 
         /* Responsive adjustments */
@@ -164,10 +215,10 @@
                         <div class="mb-3">
                             <input type="text" class="form-control" id="register-name" placeholder="Full Name" required>
                         </div>
-                         <div class="mb-3">
+                        <div class="mb-3">
                             <input type="text" class="form-control" id="register-location" placeholder="Location" required>
                         </div>
-                         <div class="mb-3">
+                        <div class="mb-3">
                             <input type="text" class="form-control" id="register-project" placeholder="Project Name" required>
                         </div>
                         <div class="mb-3">
@@ -216,6 +267,16 @@
                             <i class="fa-solid fa-list-check me-2"></i> My Tasks
                         </a>
                     </li>
+                    <li class="nav-item mb-2 employee-only">
+                        <a href="#" class="nav-link" data-page="add-task-page">
+                            <i class="fa-solid fa-plus-circle me-2"></i> Add My Task
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2 employee-only">
+                        <a href="#" class="nav-link" data-page="history-page">
+                            <i class="fa-solid fa-clock-rotate-left me-2"></i> My History
+                        </a>
+                    </li>
                     <li class="nav-item mb-2 manager-only">
                         <a href="#" class="nav-link" data-page="create-team-page">
                             <i class="fa-solid fa-users me-2"></i> My Team
@@ -224,6 +285,11 @@
                     <li class="nav-item mb-2 manager-only">
                         <a href="#" class="nav-link" data-page="assign-tasks-page">
                             <i class="fa-solid fa-calendar-plus me-2"></i> Assign Tasks
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2 manager-only">
+                        <a href="#" class="nav-link" data-page="review-tasks-page">
+                            <i class="fa-solid fa-user-check me-2"></i> Review Tasks
                         </a>
                     </li>
                     <li class="nav-item mb-2 admin-only">
@@ -269,6 +335,27 @@
                     </div>
                 </div>
 
+                <div id="history-page" class="content-page d-none">
+                    <h2 class="mb-4">My Task History</h2>
+                    <div id="history-list" class="row g-4">
+                        <p class="text-center">Loading history...</p>
+                    </div>
+                </div>
+
+                <div id="add-task-page" class="content-page d-none">
+                    <div class="card p-4">
+                        <h2 class="mb-4">Add Your Own Task</h2>
+                        <div id="add-task-alert-container"></div>
+                        <form id="add-task-form">
+                            <div class="mb-3">
+                                <label for="employee-task-input" class="form-label">Task Description</label>
+                                <textarea class="form-control" id="employee-task-input" rows="3" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Submit for Approval</button>
+                        </form>
+                    </div>
+                </div>
+
                 <div id="create-team-page" class="content-page d-none">
                     <div class="card p-4">
                         <h2 class="mb-4">Create Your Team</h2>
@@ -297,6 +384,10 @@
                                 <label for="assign-team-member-select" class="form-label">Select Team Member</label>
                                 <select class="form-select" id="assign-team-member-select" required></select>
                             </div>
+                            <div class="mb-3">
+                                <label for="assign-date-input" class="form-label">Task Date</label>
+                                <input type="date" class="form-control" id="assign-date-input" required>
+                            </div>
                             <div id="targets-container">
                                 <div class="mb-3 target-input-group">
                                     <label for="target-1" class="form-label">Target 1</label>
@@ -309,6 +400,16 @@
                             <button type="button" class="btn btn-secondary mb-3" id="add-target-btn">Add More Target</button>
                             <button type="submit" class="btn btn-primary d-block w-100">Assign Tasks</button>
                         </form>
+                    </div>
+                </div>
+
+                <div id="review-tasks-page" class="content-page d-none">
+                    <div class="card p-4">
+                        <h2 class="mb-4">Review Employee Tasks</h2>
+                        <div id="review-tasks-alert-container"></div>
+                        <div id="pending-tasks-list" class="list-group">
+                            <p class="text-center">No tasks pending for approval.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -330,6 +431,7 @@
                                         <div class="card-body">
                                             <p class="mb-1"><strong>Total Tasks Given:</strong> <span id="tasks-given-count">0</span></p>
                                             <p class="mb-1"><strong>Tasks Completed:</strong> <span id="tasks-completed-count">0</span></p>
+                                            <p class="mb-1"><strong>Efficiency:</strong> <span id="efficiency-rate">0%</span> (<span id="efficiency-rating">N/A</span>)</p>
                                         </div>
                                     </div>
                                     <div class="card mb-3">
@@ -348,6 +450,50 @@
                                             <option value="admin">Admin</option>
                                         </select>
                                         <button class="btn btn-primary" type="button" id="assign-role-btn">Assign Role</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr class="my-4">
+                        <h2 class="mb-4">Appreciation Certificate</h2>
+                        <div id="certificate-generator-section">
+                            <div class="mb-3">
+                                <label for="employee-of-month-select" class="form-label">Select Employee of the Month (Based on Efficiency)</label>
+                                <select class="form-select" id="employee-of-month-select">
+                                    <option value="" disabled selected>No "Very Good" employees found</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-success" id="generate-certificate-btn">Generate Certificate</button>
+                            <div id="certificate-preview-container" class="mt-4 d-none">
+                                <div id="certificate-content" class="certificate-container">
+                                    <div class="row align-items-center mb-4">
+                                        <div class="col-3 text-start">
+                                            <img src="https://i.imgur.com/G5EwYnU.png" alt="Company Logo" style="height: 80px;">
+                                        </div>
+                                        <div class="col-9 text-start">
+                                            <h3>Maheshwari Computers Pvt. Ltd.</h3>
+                                            <p class="small mb-0">203, APOLLO TRADE CENTRE, GEETA BHAVAN SQUARE, A.B. ROAD, INDORE (MP) INDIA - 452001</p>
+                                            <p class="small mb-0">Contact: 0731-4068836-37 | Web: https://maheshwaricomputers.com</p>
+                                        </div>
+                                    </div>
+                                    <hr style="border-top: 2px solid #0d6efd;">
+                                    <h1 class="certificate-header">Appreciation Certificate</h1>
+                                    <h5 class="text-muted">(EMPLOYEE OF THE MONTH)</h5>
+                                    <p class="certificate-text mt-5">
+                                        This is to certify that <span id="cert-employee-name" class="fw-bold"></span> has been recognized as
+                                        the Employee of the Month for the month of <span id="cert-month" class="fw-bold"></span> at Maheshwari
+                                        Computers Private Limited (MCPL).
+                                    </p>
+                                    <p class="certificate-text">
+                                        He/She has shown exemplary performance, dedication, and sincerity in site work execution and has significantly contributed to the successful progress of our projects.
+                                    </p>
+                                    <p class="certificate-text">
+                                        We truly appreciate his/her hard work, commitment, and valuable efforts.
+                                    </p>
+                                    <div class="certificate-signature">
+                                        <p>Date: <span id="cert-date"></span></p>
+                                        <p class="mt-4">Issued By:</p>
+                                        <p>MAHESHWARI COMPUTERS PVT. LTD. (MCPL)</p>
                                     </div>
                                 </div>
                             </div>
@@ -379,6 +525,10 @@
                             <div class="mb-3">
                                 <label for="profile-email" class="form-label">Email</label>
                                 <input type="email" class="form-control" id="profile-email" disabled>
+                            </div>
+                            <div class="mb-3">
+                                <label for="profile-role" class="form-label">Role</label>
+                                <input type="text" class="form-control" id="profile-role" disabled>
                             </div>
                             <button type="submit" class="btn btn-primary">Update Profile</button>
                         </form>
@@ -436,6 +586,11 @@
         const dashboardContent = document.getElementById('dashboard-content');
         const tasksPage = document.getElementById('tasks-page');
         const tasksList = document.getElementById('tasks-list');
+        const historyPage = document.getElementById('history-page');
+        const historyList = document.getElementById('history-list');
+        const addTasksPage = document.getElementById('add-task-page');
+        const addTaskForm = document.getElementById('add-task-form');
+        const addTaskAlertContainer = document.getElementById('add-task-alert-container');
         const createTeamPage = document.getElementById('create-team-page');
         const createTeamForm = document.getElementById('create-team-form');
         const teamMembersSelect = document.getElementById('team-members-select');
@@ -445,6 +600,9 @@
         const assignTeamMemberSelect = document.getElementById('assign-team-member-select');
         const targetsContainer = document.getElementById('targets-container');
         const addTargetBtn = document.getElementById('add-target-btn');
+        const assignDateInput = document.getElementById('assign-date-input');
+        const reviewTasksPage = document.getElementById('review-tasks-page');
+        const pendingTasksList = document.getElementById('pending-tasks-list');
         const adminPanelPage = document.getElementById('admin-panel-page');
         const userSelect = document.getElementById('user-select');
         const userDetailsPanel = document.getElementById('user-details-panel');
@@ -452,6 +610,8 @@
         const roleSelect = document.getElementById('role-select');
         const tasksGivenCount = document.getElementById('tasks-given-count');
         const tasksCompletedCount = document.getElementById('tasks-completed-count');
+        const efficiencyRate = document.getElementById('efficiency-rate');
+        const efficiencyRating = document.getElementById('efficiency-rating');
         const completionChartCtx = document.getElementById('completion-chart');
         let completionChart;
         const profilePage = document.getElementById('profile-page');
@@ -461,14 +621,22 @@
         const profileEmailInput = document.getElementById('profile-email');
         const profileLocationInput = document.getElementById('profile-location');
         const profileProjectInput = document.getElementById('profile-project');
+        const profileRoleInput = document.getElementById('profile-role');
+        const employeeOfMonthSelect = document.getElementById('employee-of-month-select');
+        const generateCertificateBtn = document.getElementById('generate-certificate-btn');
+        const certificatePreviewContainer = document.getElementById('certificate-preview-container');
+        const certEmployeeName = document.getElementById('cert-employee-name');
+        const certMonth = document.getElementById('cert-month');
+        const certDate = document.getElementById('cert-date');
 
         // Utility functions
         function showPage(pageId) {
             document.querySelectorAll('.content-page').forEach(page => page.classList.add('d-none'));
             document.getElementById(pageId).classList.remove('d-none');
-            pageTitle.textContent = document.querySelector(`[data-page="${pageId}"]`).textContent.trim();
+            const pageLink = document.querySelector(`[data-page="${pageId}"]`);
+            pageTitle.textContent = pageLink.textContent.trim();
             document.querySelectorAll('.sidebar a').forEach(link => link.classList.remove('active'));
-            document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+            pageLink.classList.add('active');
             if (window.innerWidth <= 768) {
                 sidebar.classList.add('collapsed');
             }
@@ -494,6 +662,11 @@
             const day = String(now.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         }
+        
+        function getMonthName(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+        }
 
         // Authentication and User State Management
         onAuthStateChanged(auth, async (user) => {
@@ -502,7 +675,7 @@
                 mainApp.classList.remove('d-none');
                 const userRef = ref(db, `users/${user.uid}`);
                 const snapshot = await get(userRef);
-                const userData = snapshot.val();
+                let userData = snapshot.val();
                 
                 // Set default admin role on first login if email matches
                 if (user.email === 'admin2025@gmail.com' && (!userData || userData.role !== 'admin')) {
@@ -512,6 +685,7 @@
                         role: 'admin'
                     });
                     user.role = 'admin';
+                    userData = { name: 'Admin', role: 'admin' };
                 } else if (userData) {
                     user.role = userData.role || 'employee';
                 } else {
@@ -546,10 +720,10 @@
                 await loadAdminDashboard();
             } else if (role === 'manager') {
                 document.querySelectorAll('.manager-only').forEach(el => el.classList.remove('d-none'));
-                dashboardContent.innerHTML = `<h3>Hello, ${userDisplayName.textContent}!</h3><p>Welcome to the Manager Dashboard. Use the navigation to manage your team and assign tasks.</p>`;
+                await loadManagerDashboard();
             } else { // employee
                 document.querySelectorAll('.employee-only').forEach(el => el.classList.remove('d-none'));
-                dashboardContent.innerHTML = `<h3>Hello, ${userDisplayName.textContent}!</h3><p>Welcome to the Employee Dashboard. Here you can see your daily tasks.</p>`;
+                dashboardContent.innerHTML = `<h3>Hello, ${userDisplayName.textContent}! 👋</h3><p>Welcome to the Employee Dashboard. Use the navigation to see your tasks.</p>`;
                 await loadTasks('tasks-page');
             }
         }
@@ -570,8 +744,10 @@
                 showPage(pageId);
                 // Load data for the selected page
                 if (pageId === 'tasks-page') loadTasks(pageId);
+                if (pageId === 'history-page') loadHistory(pageId);
                 if (pageId === 'create-team-page') loadEmployeesForTeam();
                 if (pageId === 'assign-tasks-page') loadManagerTeamForAssign();
+                if (pageId === 'review-tasks-page') loadPendingTasks();
                 if (pageId === 'admin-panel-page') loadAllUsersForAdmin();
                 if (pageId === 'profile-page') loadProfile();
             }
@@ -653,7 +829,7 @@
                 tasksList.innerHTML = '';
                 if (tasksData) {
                     const filteredTasks = Object.entries(tasksData).filter(([key, task]) => 
-                        task.userId === userId && task.date === today
+                        task.userId === userId && task.date === today && task.status === 'approved'
                     );
 
                     if (filteredTasks.length > 0) {
@@ -687,8 +863,136 @@
                     }
                 }
                 if (!hasTasks) {
-                    tasksList.innerHTML = '<div class="col-12"><p class="text-center">No tasks assigned for today. Go to the dashboard.</p></div>';
+                    tasksList.innerHTML = '<div class="col-12"><p class="text-center">No tasks assigned for today. Go to the dashboard or add your own.</p></div>';
                 }
+            });
+        }
+        
+        // Employee Task History
+        async function loadHistory() {
+            historyList.innerHTML = '<p class="text-center">Loading history...</p>';
+            const userId = auth.currentUser.uid;
+            const tasksRef = ref(db, 'assigned_tasks');
+            
+            onValue(tasksRef, async (snapshot) => {
+                const tasksData = snapshot.val();
+                const userTasks = Object.entries(tasksData || {}).filter(([key, task]) => task.userId === userId);
+                
+                if (userTasks.length > 0) {
+                    const tasksByDate = userTasks.reduce((acc, [taskId, task]) => {
+                        (acc[task.date] = acc[task.date] || []).push({ taskId, ...task });
+                        return acc;
+                    }, {});
+
+                    historyList.innerHTML = '';
+                    for (const date in tasksByDate) {
+                        const dateSection = document.createElement('div');
+                        dateSection.className = 'col-12 mb-4';
+                        dateSection.innerHTML = `
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h4 class="mb-0">${date}</h4>
+                                </div>
+                                <ul class="list-group list-group-flush">
+                                    ${tasksByDate[date].map(task => `
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <p class="mb-1 fw-bold">Targets:</p>
+                                                <ul>
+                                                    ${task.targets.map(t => `<li>${t}</li>`).join('')}
+                                                </ul>
+                                            </div>
+                                            <span class="badge bg-${task.completed ? 'success' : 'warning'}">${task.completed ? 'Completed' : 'Pending'}</span>
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        `;
+                        historyList.appendChild(dateSection);
+                    }
+                } else {
+                    historyList.innerHTML = '<div class="col-12"><p class="text-center">No task history found.</p></div>';
+                }
+            });
+        }
+        
+        // Employee Add Task
+        addTaskForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = auth.currentUser;
+            const taskText = document.getElementById('employee-task-input').value;
+
+            try {
+                const newTaskRef = push(ref(db, 'employee_tasks_for_approval'));
+                await set(newTaskRef, {
+                    userId: user.uid,
+                    task: taskText,
+                    status: 'pending-approval',
+                    date: getCurrentDate()
+                });
+                showAlert(addTaskAlertContainer, 'Task submitted for approval!', 'success');
+                addTaskForm.reset();
+            } catch (error) {
+                showAlert(addTaskAlertContainer, `Failed to submit task: ${error.message}`);
+            }
+        });
+
+        // Manager Dashboard
+        async function loadManagerDashboard() {
+            dashboardContent.innerHTML = `
+                <h3 class="mb-4">Hello, ${userDisplayName.textContent}! 👋</h3>
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">Your Team's Today's Progress</div>
+                            <div class="card-body" id="manager-progress-list">
+                                <p class="text-center">Loading team progress...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const managerProgressList = document.getElementById('manager-progress-list');
+            const managerId = auth.currentUser.uid;
+            const today = getCurrentDate();
+            
+            const teamRef = ref(db, `teams/${managerId}`);
+            const tasksRef = ref(db, 'assigned_tasks');
+            const usersRef = ref(db, 'users');
+
+            onValue(teamRef, async (teamSnapshot) => {
+                const teamUids = Object.values(teamSnapshot.val() || {});
+                if (teamUids.length === 0) {
+                    managerProgressList.innerHTML = '<p class="text-center">You have no team members. Go to "My Team" to add them.</p>';
+                    return;
+                }
+                
+                const usersSnapshot = await get(usersRef);
+                const usersData = usersSnapshot.val();
+                
+                onValue(tasksRef, (tasksSnapshot) => {
+                    const tasksData = tasksSnapshot.val();
+                    let outputHtml = '';
+                    
+                    teamUids.forEach(uid => {
+                        const user = usersData[uid];
+                        if (!user) return;
+                        
+                        const userTasks = Object.values(tasksData || {}).filter(t => t.userId === uid && t.date === today);
+                        const completedCount = userTasks.filter(t => t.completed).length;
+                        const totalCount = userTasks.length;
+                        
+                        outputHtml += `
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span><strong>${user.name}</strong></span>
+                                <span>${completedCount} / ${totalCount} Tasks Completed</span>
+                            </div>
+                        `;
+                    });
+                    
+                    managerProgressList.innerHTML = outputHtml || '<p class="text-center">No tasks assigned to your team today.</p>';
+                });
             });
         }
 
@@ -738,23 +1042,6 @@
                         currentTeamList.appendChild(li);
                     }
                 });
-
-                document.querySelectorAll('.remove-member-btn').forEach(btn => {
-                    btn.addEventListener('click', async (e) => {
-                        const uidToRemove = e.target.dataset.id;
-                        const managerTeamRef = ref(db, `teams/${managerId}`);
-                        const currentTeamSnapshot = await get(managerTeamRef);
-                        const team = currentTeamSnapshot.val();
-                        if(team) {
-                            const indexToRemove = Object.keys(team).find(key => team[key] === uidToRemove);
-                            if(indexToRemove) {
-                                await set(ref(db, `teams/${managerId}/${indexToRemove}`), null);
-                                loadCurrentTeam();
-                                showAlert(document.getElementById('team-alert-container'), 'Team member removed!', 'success');
-                            }
-                        }
-                    });
-                });
             } else {
                 currentTeamList.innerHTML = '<p class="text-center">No team members saved yet.</p>';
             }
@@ -770,12 +1057,13 @@
             showAlert(document.getElementById('team-alert-container'), 'Team saved successfully!', 'success');
             loadCurrentTeam();
         });
-
+        
         // Manager Assign Tasks
         async function loadManagerTeamForAssign() {
             const managerId = auth.currentUser.uid;
             const teamRef = ref(db, `teams/${managerId}`);
             assignTeamMemberSelect.innerHTML = '<option value="" disabled selected>Select a Team Member</option>';
+            assignDateInput.value = getCurrentDate();
             
             const snapshot = await get(teamRef);
             const teamData = snapshot.val();
@@ -836,9 +1124,8 @@
             e.preventDefault();
             const managerId = auth.currentUser.uid;
             const userId = assignTeamMemberSelect.value;
-            const targets = Array.from(targetsContainer.querySelectorAll('.target-input'))
-                                .map(input => input.value.trim()).filter(Boolean);
-            const today = getCurrentDate();
+            const targets = Array.from(targetsContainer.querySelectorAll('.target-input')).map(input => input.value.trim()).filter(Boolean);
+            const assignDate = assignDateInput.value;
             
             if (targets.length === 0) {
                 showAlert(document.getElementById('assign-tasks-alert-container'), 'Please add at least one target.', 'danger');
@@ -851,11 +1138,13 @@
                     managerId: managerId,
                     userId: userId,
                     targets: targets,
-                    date: today,
-                    completed: false
+                    date: assignDate,
+                    completed: false,
+                    status: 'approved'
                 });
                 showAlert(document.getElementById('assign-tasks-alert-container'), 'Tasks assigned successfully!', 'success');
                 assignTasksForm.reset();
+                assignDateInput.value = getCurrentDate();
                 targetsContainer.innerHTML = `
                     <div class="mb-3 target-input-group">
                         <label for="target-1" class="form-label">Target 1</label>
@@ -869,7 +1158,80 @@
                 showAlert(document.getElementById('assign-tasks-alert-container'), `Failed to assign tasks: ${error.message}`, 'danger');
             }
         });
+        
+        // Manager Review Tasks
+        async function loadPendingTasks() {
+            pendingTasksList.innerHTML = '<p class="text-center">Loading pending tasks...</p>';
+            const managerId = auth.currentUser.uid;
+            const teamRef = ref(db, `teams/${managerId}`);
+            const pendingTasksRef = ref(db, 'employee_tasks_for_approval');
+            
+            const teamSnapshot = await get(teamRef);
+            const teamUids = Object.values(teamSnapshot.val() || {});
+            const usersRef = ref(db, 'users');
+            const usersSnapshot = await get(usersRef);
+            const usersData = usersSnapshot.val();
 
+            onValue(pendingTasksRef, (tasksSnapshot) => {
+                const tasksData = tasksSnapshot.val();
+                let outputHtml = '';
+                let hasPending = false;
+                
+                Object.entries(tasksData || {}).forEach(([taskId, task]) => {
+                    if (teamUids.includes(task.userId) && task.status === 'pending-approval') {
+                        hasPending = true;
+                        const user = usersData[task.userId] || {};
+                        outputHtml += `
+                            <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap mb-3">
+                                <div>
+                                    <h5 class="mb-1">${user.name}</h5>
+                                    <p class="mb-1">${task.task}</p>
+                                    <p class="small text-muted mb-0">Submitted on: ${task.date}</p>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-success approve-task-btn" data-id="${taskId}" data-user-id="${task.userId}" data-task="${task.task}">Approve</button>
+                                    <button class="btn btn-sm btn-danger reject-task-btn" data-id="${taskId}">Reject</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                pendingTasksList.innerHTML = outputHtml || '<p class="text-center">No tasks pending for approval.</p>';
+                
+                document.querySelectorAll('.approve-task-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const taskId = e.target.dataset.id;
+                        const userId = e.target.dataset.userId;
+                        const taskText = e.target.dataset.task;
+                        
+                        // Move to assigned_tasks
+                        const newAssignedTaskRef = push(ref(db, 'assigned_tasks'));
+                        await set(newAssignedTaskRef, {
+                            managerId: managerId,
+                            userId: userId,
+                            targets: [taskText],
+                            date: getCurrentDate(),
+                            completed: false,
+                            status: 'approved'
+                        });
+                        
+                        // Update status in employee_tasks_for_approval
+                        await update(ref(db, `employee_tasks_for_approval/${taskId}`), { status: 'approved' });
+                        showAlert(document.getElementById('review-tasks-alert-container'), 'Task approved!', 'success');
+                    });
+                });
+                
+                document.querySelectorAll('.reject-task-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const taskId = e.target.dataset.id;
+                        await update(ref(db, `employee_tasks_for_approval/${taskId}`), { status: 'rejected' });
+                        showAlert(document.getElementById('review-tasks-alert-container'), 'Task rejected!', 'danger');
+                    });
+                });
+            });
+        }
+        
         // Admin Dashboard
         async function loadAdminDashboard() {
             dashboardContent.innerHTML = `
@@ -938,17 +1300,68 @@
         async function loadAllUsersForAdmin() {
             const allUsersRef = ref(db, 'users');
             userSelect.innerHTML = '<option value="" disabled selected>Select a User</option>';
+            employeeOfMonthSelect.innerHTML = '<option value="" disabled selected>No "Very Good" employees found</option>';
 
             const snapshot = await get(allUsersRef);
             const usersData = snapshot.val();
+            const veryGoodEmployees = [];
             
-            Object.entries(usersData || {}).forEach(([uid, user]) => {
+            for (const [uid, user] of Object.entries(usersData || {})) {
                 const option = document.createElement('option');
                 option.value = uid;
                 option.textContent = user.name;
                 userSelect.appendChild(option);
-            });
+
+                const efficiency = await getEfficiency(uid);
+                if (efficiency.rating === 'Very Good') {
+                    const certOption = document.createElement('option');
+                    certOption.value = uid;
+                    certOption.textContent = user.name;
+                    employeeOfMonthSelect.appendChild(certOption);
+                    veryGoodEmployees.push(user);
+                }
+            }
+
+            if (veryGoodEmployees.length > 0) {
+                employeeOfMonthSelect.disabled = false;
+            } else {
+                employeeOfMonthSelect.disabled = true;
+            }
             userDetailsPanel.classList.add('d-none');
+        }
+
+        async function getEfficiency(userId) {
+            const tasksRef = ref(db, 'assigned_tasks');
+            const tasksSnapshot = await get(tasksRef);
+            const tasksData = tasksSnapshot.val();
+
+            let totalTasks = 0;
+            let completedTasks = 0;
+            if (tasksData) {
+                Object.values(tasksData).forEach(task => {
+                    if (task.userId === userId) {
+                        totalTasks++;
+                        if (task.completed) {
+                            completedTasks++;
+                        }
+                    }
+                });
+            }
+            
+            const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+            let rating = 'N/A';
+            if (completionRate >= 90) rating = 'Very Good';
+            else if (completionRate >= 75) rating = 'Good';
+            else if (completionRate >= 50) rating = 'Moderate';
+            else if (completionRate >= 25) rating = 'Low';
+            else rating = 'Very Low';
+            
+            return {
+                totalTasks,
+                completedTasks,
+                rate: completionRate.toFixed(1),
+                rating
+            };
         }
 
         userSelect.addEventListener('change', async () => {
@@ -966,36 +1379,21 @@
             roleSelect.value = userData.role;
 
             // Load performance metrics
-            const tasksRef = ref(db, 'assigned_tasks');
-            const tasksSnapshot = await get(tasksRef);
-            const tasksData = tasksSnapshot.val();
-
-            let totalTasks = 0;
-            let completedTasks = 0;
-            if (tasksData) {
-                Object.values(tasksData).forEach(task => {
-                    if (task.userId === selectedUserId) {
-                        totalTasks++;
-                        if (task.completed) {
-                            completedTasks++;
-                        }
-                    }
-                });
-            }
+            const efficiency = await getEfficiency(selectedUserId);
             
-            tasksGivenCount.textContent = totalTasks;
-            tasksCompletedCount.textContent = completedTasks;
-            
-            const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-            const pendingRate = 100 - completionRate;
+            tasksGivenCount.textContent = efficiency.totalTasks;
+            tasksCompletedCount.textContent = efficiency.completedTasks;
+            efficiencyRate.textContent = `${efficiency.rate}%`;
+            efficiencyRating.textContent = efficiency.rating;
 
+            const pendingRate = 100 - efficiency.rate;
             if (completionChart) completionChart.destroy();
             completionChart = new Chart(completionChartCtx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Completed', 'Pending'],
                     datasets: [{
-                        data: [completionRate, pendingRate],
+                        data: [efficiency.rate, pendingRate],
                         backgroundColor: ['#198754', '#ffc107'],
                         hoverOffset: 4
                     }]
@@ -1025,8 +1423,8 @@
             const userRef = ref(db, `users/${userId}`);
 
             if (auth.currentUser.uid === userId) {
-                 showAlert(document.getElementById('role-alert-container'), 'Cannot change your own role.', 'danger');
-                 return;
+                showAlert(document.getElementById('role-alert-container'), 'Cannot change your own role.', 'danger');
+                return;
             }
             
             try {
@@ -1034,6 +1432,30 @@
                 showAlert(document.getElementById('role-alert-container'), `Role assigned to ${newRole} successfully!`, 'success');
             } catch (error) {
                 showAlert(document.getElementById('role-alert-container'), `Failed to assign role: ${error.message}`, 'danger');
+            }
+        });
+
+        // Certificate Generation
+        generateCertificateBtn.addEventListener('click', async () => {
+            const selectedUserId = employeeOfMonthSelect.value;
+            if (!selectedUserId) {
+                showAlert(document.getElementById('admin-panel-page'), 'Please select an employee to generate the certificate.', 'warning');
+                certificatePreviewContainer.classList.add('d-none');
+                return;
+            }
+
+            const userRef = ref(db, `users/${selectedUserId}`);
+            const userSnapshot = await get(userRef);
+            const userData = userSnapshot.val();
+
+            if (userData) {
+                certEmployeeName.textContent = `Mr./Ms. ${userData.name}`;
+                certMonth.textContent = getMonthName(getCurrentDate());
+                certDate.textContent = getCurrentDate();
+                certificatePreviewContainer.classList.remove('d-none');
+            } else {
+                showAlert(document.getElementById('admin-panel-page'), 'Could not retrieve employee data.', 'danger');
+                certificatePreviewContainer.classList.add('d-none');
             }
         });
 
@@ -1049,6 +1471,7 @@
             profileEmailInput.value = userData.email || '';
             profileLocationInput.value = userData.location || '';
             profileProjectInput.value = userData.project || '';
+            profileRoleInput.value = userData.role || 'employee';
         }
 
         profileForm.addEventListener('submit', async (e) => {
