@@ -7,15 +7,19 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
     <style>
         :root {
-            --dark-bg: #2b3035;
+            --dark-bg: #212529;
             --light-bg: #f8f9fa;
             --secondary-bg: #e9ecef;
             --primary-color: #0d6efd;
             --secondary-color: #6c757d;
             --text-color: #ffffff;
             --header-color: #343a40;
+            --high-priority: #dc3545;
+            --medium-priority: #ffc107;
+            --low-priority: #198754;
         }
 
         body {
@@ -55,28 +59,63 @@
             transform: translateX(0);
             z-index: 1030;
             flex-shrink: 0;
+            position: fixed;
+            height: 100%;
         }
 
-        .sidebar.collapsed {
-            transform: translateX(-280px);
+        /* Desktop view */
+        @media (min-width: 769px) {
+            .sidebar {
+                transform: translateX(0);
+                position: sticky;
+                top: 0;
+                height: 100vh;
+            }
+            .main-content {
+                margin-left: 280px;
+                transition: margin-left 0.3s ease-in-out;
+            }
+            .navbar-top {
+                margin-left: 280px;
+                width: calc(100% - 280px);
+            }
+            .sidebar-close-btn {
+                display: none;
+            }
+            .sidebar-toggle {
+                display: none;
+            }
         }
-
+        
         .sidebar-header {
             text-align: center;
             padding-bottom: 1rem;
             border-bottom: 1px solid #495057;
             margin-bottom: 1.5rem;
+            position: relative;
         }
         
         .sidebar-header h4 {
             color: #fff;
             font-weight: 600;
         }
+        
+        .sidebar-close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            position: absolute;
+            right: 0;
+            top: 0;
+            display: none;
+        }
 
         .sidebar a {
             color: var(--text-color);
             text-decoration: none;
-            display: block;
+            display: flex;
+            align-items: center;
             padding: 0.75rem 1.25rem;
             margin-bottom: 0.5rem;
             border-radius: 8px;
@@ -100,6 +139,19 @@
             padding: 1rem 1.5rem;
             border-radius: 10px;
             margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .navbar-top .navbar-brand, .navbar-top .d-flex {
+            margin: 0;
+        }
+
+        .navbar-top h4 {
+            flex-grow: 1;
+            text-align: center;
+            margin: 0;
         }
 
         .card {
@@ -169,18 +221,67 @@
             font-size: 1rem;
             font-weight: 600;
         }
+        
+        .certificate-logo {
+            max-width: 150px;
+            height: auto;
+        }
+        
+        .priority-high { background-color: var(--high-priority); color: white; }
+        .priority-medium { background-color: var(--medium-priority); color: black; }
+        .priority-low { background-color: var(--low-priority); color: white; }
+        
+        .task-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .task-list-item:last-child {
+            border-bottom: none;
+        }
+        
+        .task-list-item .badge {
+            min-width: 70px;
+        }
+        
+        .notification-badge {
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            border-radius: 50%;
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            animation: blinker 1s linear infinite;
+        }
 
-        /* Responsive adjustments */
+        @keyframes blinker {
+            50% { opacity: 0; }
+        }
+
+        /* Mobile view */
         @media (max-width: 768px) {
             .sidebar {
-                position: fixed;
-                height: 100%;
-                top: 0;
-                left: 0;
+                transform: translateX(-280px);
             }
-
+            .sidebar.show {
+                transform: translateX(0);
+            }
             .main-content {
                 margin-left: 0;
+            }
+            .sidebar-close-btn {
+                display: block;
+            }
+            .sidebar-toggle {
+                display: block;
+            }
+            .navbar-top {
+                margin-left: 0;
+                width: 100%;
             }
         }
     </style>
@@ -214,6 +315,9 @@
                     <form id="register-form">
                         <div class="mb-3">
                             <input type="text" class="form-control" id="register-name" placeholder="Full Name" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="register-employee-id" placeholder="Employee ID (pocketHR)" required>
                         </div>
                         <div class="mb-3">
                             <input type="text" class="form-control" id="register-location" placeholder="Location" required>
@@ -255,6 +359,7 @@
             <div id="sidebar" class="sidebar">
                 <div class="sidebar-header">
                     <h4>Task Flow</h4>
+                    <button class="sidebar-close-btn" id="sidebar-close-btn"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <ul class="nav flex-column" id="sidebar-menu">
                     <li class="nav-item mb-2">
@@ -273,8 +378,8 @@
                         </a>
                     </li>
                     <li class="nav-item mb-2 employee-only">
-                        <a href="#" class="nav-link" data-page="history-page">
-                            <i class="fa-solid fa-clock-rotate-left me-2"></i> My History
+                        <a href="#" class="nav-link" data-page="certificates-page">
+                            <i class="fa-solid fa-certificate me-2"></i> My Certificates
                         </a>
                     </li>
                     <li class="nav-item mb-2 manager-only">
@@ -287,9 +392,25 @@
                             <i class="fa-solid fa-calendar-plus me-2"></i> Assign Tasks
                         </a>
                     </li>
-                    <li class="nav-item mb-2 manager-only">
+                    <li class="nav-item mb-2 manager-only position-relative">
                         <a href="#" class="nav-link" data-page="review-tasks-page">
                             <i class="fa-solid fa-user-check me-2"></i> Review Tasks
+                            <span id="review-tasks-notification" class="notification-badge d-none"></span>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2 manager-only">
+                        <a href="#" class="nav-link" data-page="manager-task-history-page">
+                            <i class="fa-solid fa-list-ul me-2"></i> Team Task History
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2 admin-only">
+                                <a href="#" class="nav-link" data-page="assign-tasks-admin-page">
+                                    <i class="fa-solid fa-calendar-plus me-2"></i> Assign Tasks
+                                </a>
+                    </li>
+                    <li class="nav-item mb-2 admin-only">
+                        <a href="#" class="nav-link" data-page="admin-task-history-page">
+                            <i class="fa-solid fa-list-alt me-2"></i> Task History
                         </a>
                     </li>
                     <li class="nav-item mb-2 admin-only">
@@ -312,33 +433,40 @@
             
             <div class="main-content">
                 <nav class="navbar navbar-top">
-                    <div class="container-fluid">
-                        <button class="btn btn-outline-secondary d-md-none" id="sidebar-toggle">
-                            <i class="fa-solid fa-bars"></i>
-                        </button>
-                        <h4 class="mb-0" id="page-title">Dashboard</h4>
-                        <div class="d-flex align-items-center">
-                            <i class="fa-solid fa-circle-user fa-2x me-2"></i>
-                            <span id="user-display-name" class="fw-bold"></span>
-                        </div>
+                    <button class="btn btn-outline-secondary d-lg-none" id="sidebar-toggle">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <h4 class="mb-0" id="page-title">Dashboard</h4>
+                    <div class="d-flex align-items-center">
+                        <i class="fa-solid fa-circle-user fa-2x me-2"></i>
+                        <span id="user-display-name" class="fw-bold"></span>
                     </div>
                 </nav>
 
-                <div id="dashboard-page" class="content-page">
-                    <div id="dashboard-content"></div>
+                <div class="container-fluid">
+                    <div id="dashboard-page" class="content-page">
+                        <div id="dashboard-content"></div>
+                    </div>
                 </div>
-
+                
                 <div id="tasks-page" class="content-page d-none">
-                    <h2 class="mb-4">My Tasks for Today</h2>
+                    <h2 class="mb-4">My Tasks</h2>
                     <div id="tasks-list" class="row g-4">
                         <p class="text-center">Loading tasks...</p>
                     </div>
                 </div>
 
-                <div id="history-page" class="content-page d-none">
-                    <h2 class="mb-4">My Task History</h2>
-                    <div id="history-list" class="row g-4">
-                        <p class="text-center">Loading history...</p>
+                <div id="certificates-page" class="content-page d-none">
+                    <h2 class="mb-4">My Certificates</h2>
+                    <div id="certificate-history-list">
+                        <p class="text-center">Loading certificates...</p>
+                    </div>
+                    <div id="certificate-modal-container" class="d-none">
+                        <div id="certificate-content-modal" class="certificate-container mt-4"></div>
+                        <div class="text-center mt-3">
+                            <button class="btn btn-primary" id="download-cert-modal-btn">Download as PDF</button>
+                            <button class="btn btn-secondary" id="close-cert-modal-btn">Close</button>
+                        </div>
                     </div>
                 </div>
 
@@ -347,15 +475,21 @@
                         <h2 class="mb-4">Add Your Own Task</h2>
                         <div id="add-task-alert-container"></div>
                         <form id="add-task-form">
-                            <div class="mb-3">
-                                <label for="employee-task-input" class="form-label">Task Description</label>
-                                <textarea class="form-control" id="employee-task-input" rows="3" required></textarea>
+                            <div id="employee-targets-container">
+                                <div class="mb-3 employee-target-input-group">
+                                    <label for="employee-task-1" class="form-label">Task 1</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control employee-task-input" required>
+                                        <button class="btn btn-outline-danger employee-remove-target-btn" type="button" disabled><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                </div>
                             </div>
+                            <button type="button" class="btn btn-secondary mb-3" id="add-employee-target-btn">Add More Task</button>
                             <button type="submit" class="btn btn-primary w-100">Submit for Approval</button>
                         </form>
                     </div>
                 </div>
-
+                
                 <div id="create-team-page" class="content-page d-none">
                     <div class="card p-4">
                         <h2 class="mb-4">Create Your Team</h2>
@@ -390,19 +524,24 @@
                             </div>
                             <div id="targets-container">
                                 <div class="mb-3 target-input-group">
-                                    <label for="target-1" class="form-label">Target 1</label>
+                                    <label for="target-1" class="form-label">Task 1</label>
                                     <div class="input-group">
                                         <input type="text" class="form-control target-input" required>
+                                        <select class="form-select priority-select">
+                                            <option value="low">Low Priority</option>
+                                            <option value="medium" selected>Medium Priority</option>
+                                            <option value="high">High Priority</option>
+                                        </select>
                                         <button class="btn btn-outline-danger remove-target-btn" type="button" disabled><i class="fa-solid fa-trash"></i></button>
                                     </div>
                                 </div>
                             </div>
-                            <button type="button" class="btn btn-secondary mb-3" id="add-target-btn">Add More Target</button>
+                            <button type="button" class="btn btn-secondary mb-3" id="add-target-btn">Add More Task</button>
                             <button type="submit" class="btn btn-primary d-block w-100">Assign Tasks</button>
                         </form>
                     </div>
                 </div>
-
+                
                 <div id="review-tasks-page" class="content-page d-none">
                     <div class="card p-4">
                         <h2 class="mb-4">Review Employee Tasks</h2>
@@ -410,6 +549,63 @@
                         <div id="pending-tasks-list" class="list-group">
                             <p class="text-center">No tasks pending for approval.</p>
                         </div>
+                    </div>
+                </div>
+                
+                <div id="manager-task-history-page" class="content-page d-none">
+                    <h2 class="mb-4">Team Task History</h2>
+                    <div id="manager-history-list" class="row g-4">
+                        <p class="text-center">Loading task history...</p>
+                    </div>
+                </div>
+
+                <div id="admin-task-history-page" class="content-page d-none">
+                    <h2 class="mb-4">All Task History</h2>
+                    <div class="card p-4">
+                        <div class="mb-3">
+                            <label for="history-filter-user" class="form-label">Filter by User</label>
+                            <select class="form-select" id="history-filter-user"></select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="history-filter-date" class="form-label">Filter by Date</label>
+                            <input type="date" class="form-control" id="history-filter-date">
+                        </div>
+                        <div id="admin-history-list" class="row g-4 mt-3">
+                            <p class="text-center">Loading task history...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="assign-tasks-admin-page" class="content-page d-none">
+                    <div class="card p-4">
+                        <h2 class="mb-4">Assign Tasks to Any User</h2>
+                        <div id="assign-tasks-admin-alert-container"></div>
+                        <form id="assign-tasks-admin-form">
+                            <div class="mb-3">
+                                <label for="assign-user-admin-select" class="form-label">Select User</label>
+                                <select class="form-select" id="assign-user-admin-select" required></select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="assign-date-admin-input" class="form-label">Task Date</label>
+                                <input type="date" class="form-control" id="assign-date-admin-input" required>
+                            </div>
+                            <div id="targets-admin-container">
+                                <div class="mb-3 target-input-group">
+                                    <label for="target-1" class="form-label">Task 1</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control target-input" required>
+                                        <select class="form-select priority-select">
+                                            <option value="low">Low Priority</option>
+                                            <option value="medium">Medium Priority</option>
+                                            <option value="high">High Priority</option>
+                                        </select>
+                                        <button class="btn btn-outline-danger remove-target-btn" type="button" disabled><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary mb-3" id="add-target-admin-btn">Add More Task</button>
+                            <button type="submit" class="btn btn-primary d-block w-100">Assign Tasks</button>
+                        </form>
                     </div>
                 </div>
 
@@ -457,23 +653,19 @@
                         <hr class="my-4">
                         <h2 class="mb-4">Appreciation Certificate</h2>
                         <div id="certificate-generator-section">
+                            <div id="certificate-alert-container"></div>
                             <div class="mb-3">
                                 <label for="employee-of-month-select" class="form-label">Select Employee of the Month (Based on Efficiency)</label>
                                 <select class="form-select" id="employee-of-month-select">
-                                    <option value="" disabled selected>No "Very Good" employees found</option>
+                                    <option value="" disabled selected>No "Excellent" employees found</option>
                                 </select>
                             </div>
                             <button class="btn btn-success" id="generate-certificate-btn">Generate Certificate</button>
                             <div id="certificate-preview-container" class="mt-4 d-none">
                                 <div id="certificate-content" class="certificate-container">
                                     <div class="row align-items-center mb-4">
-                                        <div class="col-3 text-start">
-                                            <img src="https://i.imgur.com/G5EwYnU.png" alt="Company Logo" style="height: 80px;">
-                                        </div>
-                                        <div class="col-9 text-start">
-                                            <h3>Maheshwari Computers Pvt. Ltd.</h3>
-                                            <p class="small mb-0">203, APOLLO TRADE CENTRE, GEETA BHAVAN SQUARE, A.B. ROAD, INDORE (MP) INDIA - 452001</p>
-                                            <p class="small mb-0">Contact: 0731-4068836-37 | Web: https://maheshwaricomputers.com</p>
+                                        <div class="col-12 text-center">
+                                            <img src="https://images.ctfassets.net/5mphie6fobc7/IsAaWI4JColCBz0qBBPPX/1ea834e3319d32b1e78e56cd9887ce90/ChatGPT_Image_Jun_24__2025__10_47_28_AM.png" alt="Maheshwari Computers Logo" class="certificate-logo">
                                         </div>
                                     </div>
                                     <hr style="border-top: 2px solid #0d6efd;">
@@ -496,6 +688,10 @@
                                         <p>MAHESHWARI COMPUTERS PVT. LTD. (MCPL)</p>
                                     </div>
                                 </div>
+                                <div class="mt-3 text-center">
+                                    <button class="btn btn-primary" id="download-cert-btn">Download as PDF</button>
+                                    <button class="btn btn-success" id="send-cert-btn">Send as Email</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -509,6 +705,10 @@
                             <div class="mb-3">
                                 <label for="profile-name" class="form-label">Full Name</label>
                                 <input type="text" class="form-control" id="profile-name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="profile-employee-id" class="form-label">Employee ID (pocketHR)</label>
+                                <input type="text" class="form-control" id="profile-employee-id" disabled>
                             </div>
                             <div class="mb-3">
                                 <label for="profile-location" class="form-label">Location</label>
@@ -541,7 +741,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-        import { getDatabase, ref, set, get, child, onValue, update, push } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+        import { getDatabase, ref, set, get, child, onValue, update, push, remove } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-messaging.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -557,40 +758,43 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
+        const messaging = getMessaging(app);
 
         // UI Element References
-        const appContainer = document.getElementById('app-container');
         const authPages = document.getElementById('auth-pages');
         const mainApp = document.getElementById('main-app');
         const loginPage = document.getElementById('login-page');
         const registerPage = document.getElementById('register-page');
         const forgotPasswordPage = document.getElementById('forgot-password-page');
-
         const loginForm = document.getElementById('login-form');
         const registerForm = document.getElementById('register-form');
+        const registerEmployeeIdInput = document.getElementById('register-employee-id');
         const forgotPasswordForm = document.getElementById('forgot-password-form');
-
         const loginAlertContainer = document.getElementById('login-alert-container');
         const registerAlertContainer = document.getElementById('register-alert-container');
         const forgotPasswordAlertContainer = document.getElementById('forgot-password-alert-container');
-
         const sidebar = document.getElementById('sidebar');
         const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
         const sidebarMenu = document.getElementById('sidebar-menu');
         const pageTitle = document.getElementById('page-title');
         const userDisplayName = document.getElementById('user-display-name');
         const logoutBtn = document.getElementById('logout-btn');
-
-        // Page specific containers
         const dashboardPage = document.getElementById('dashboard-page');
         const dashboardContent = document.getElementById('dashboard-content');
         const tasksPage = document.getElementById('tasks-page');
         const tasksList = document.getElementById('tasks-list');
-        const historyPage = document.getElementById('history-page');
-        const historyList = document.getElementById('history-list');
+        const certificatesPage = document.getElementById('certificates-page');
+        const certificateHistoryList = document.getElementById('certificate-history-list');
+        const certificateModalContainer = document.getElementById('certificate-modal-container');
+        const certificateContentModal = document.getElementById('certificate-content-modal');
+        const downloadCertModalBtn = document.getElementById('download-cert-modal-btn');
+        const closeCertModalBtn = document.getElementById('close-cert-modal-btn');
         const addTasksPage = document.getElementById('add-task-page');
         const addTaskForm = document.getElementById('add-task-form');
         const addTaskAlertContainer = document.getElementById('add-task-alert-container');
+        const employeeTargetsContainer = document.getElementById('employee-targets-container');
+        const addEmployeeTargetBtn = document.getElementById('add-employee-target-btn');
         const createTeamPage = document.getElementById('create-team-page');
         const createTeamForm = document.getElementById('create-team-form');
         const teamMembersSelect = document.getElementById('team-members-select');
@@ -601,8 +805,21 @@
         const targetsContainer = document.getElementById('targets-container');
         const addTargetBtn = document.getElementById('add-target-btn');
         const assignDateInput = document.getElementById('assign-date-input');
+        const assignTasksAdminPage = document.getElementById('assign-tasks-admin-page');
+        const assignTasksAdminForm = document.getElementById('assign-tasks-admin-form');
+        const assignUserAdminSelect = document.getElementById('assign-user-admin-select');
+        const targetsAdminContainer = document.getElementById('targets-admin-container');
+        const addTargetAdminBtn = document.getElementById('add-target-admin-btn');
+        const assignDateAdminInput = document.getElementById('assign-date-admin-input');
         const reviewTasksPage = document.getElementById('review-tasks-page');
         const pendingTasksList = document.getElementById('pending-tasks-list');
+        const reviewTasksNotification = document.getElementById('review-tasks-notification');
+        const managerTaskHistoryPage = document.getElementById('manager-task-history-page');
+        const managerHistoryList = document.getElementById('manager-history-list');
+        const adminTaskHistoryPage = document.getElementById('admin-task-history-page');
+        const historyFilterUser = document.getElementById('history-filter-user');
+        const historyFilterDate = document.getElementById('history-filter-date');
+        const adminHistoryList = document.getElementById('admin-history-list');
         const adminPanelPage = document.getElementById('admin-panel-page');
         const userSelect = document.getElementById('user-select');
         const userDetailsPanel = document.getElementById('user-details-panel');
@@ -617,6 +834,7 @@
         const profilePage = document.getElementById('profile-page');
         const profileForm = document.getElementById('profile-form');
         const profileNameInput = document.getElementById('profile-name');
+        const profileEmployeeIdInput = document.getElementById('profile-employee-id');
         const profileMobileInput = document.getElementById('profile-mobile');
         const profileEmailInput = document.getElementById('profile-email');
         const profileLocationInput = document.getElementById('profile-location');
@@ -625,9 +843,20 @@
         const employeeOfMonthSelect = document.getElementById('employee-of-month-select');
         const generateCertificateBtn = document.getElementById('generate-certificate-btn');
         const certificatePreviewContainer = document.getElementById('certificate-preview-container');
+        const certificateContent = document.getElementById('certificate-content');
         const certEmployeeName = document.getElementById('cert-employee-name');
         const certMonth = document.getElementById('cert-month');
         const certDate = document.getElementById('cert-date');
+        const downloadCertBtn = document.getElementById('download-cert-btn');
+        const sendCertBtn = document.getElementById('send-cert-btn');
+        
+        let currentCertData = null;
+        let allUsersData = {};
+        
+        const tasksForApprovalRef = ref(db, 'employee_tasks_for_approval');
+        const assignedTasksRef = ref(db, 'assigned_tasks');
+        const usersRef = ref(db, 'users');
+        const deviceTokensRef = ref(db, 'device_tokens');
 
         // Utility functions
         function showPage(pageId) {
@@ -637,8 +866,11 @@
             pageTitle.textContent = pageLink.textContent.trim();
             document.querySelectorAll('.sidebar a').forEach(link => link.classList.remove('active'));
             pageLink.classList.add('active');
-            if (window.innerWidth <= 768) {
-                sidebar.classList.add('collapsed');
+            
+            // Hide sidebar on mobile when a link is clicked
+            const isDesktop = window.matchMedia("(min-width: 769px)").matches;
+            if (!isDesktop) {
+                sidebar.classList.remove('show');
             }
         }
 
@@ -667,25 +899,126 @@
             const date = new Date(dateString);
             return date.toLocaleString('default', { month: 'long', year: 'numeric' });
         }
+        
+        function getPriorityColor(priority) {
+            switch(priority) {
+                case 'high': return 'danger';
+                case 'medium': return 'warning';
+                case 'low': return 'success';
+                default: return 'secondary';
+            }
+        }
+        
+        function updateRemoveButtons(container) {
+            const removeBtns = container.querySelectorAll('.remove-target-btn, .employee-remove-target-btn');
+            removeBtns.forEach(btn => {
+                btn.disabled = removeBtns.length === 1;
+            });
+        }
+        
+        function toggleSidebar() {
+            const isDesktop = window.matchMedia("(min-width: 769px)").matches;
+            if (isDesktop) {
+                // For desktop, toggle the 'collapsed' class on the sidebar
+                sidebar.classList.toggle('collapsed');
+            } else {
+                // For mobile, toggle the 'show' class on the sidebar
+                sidebar.classList.toggle('show');
+            }
+        }
+
+        // Push Notification Functions
+        async function requestPermissionAndGetToken() {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    const token = await getToken(messaging, {
+                        vapidKey: 'BExP8aT6HqO7WwM8mQp4K1gR2z_Yf7D5Ff-zD_yQ7pW-u_Ew8_9vP0_Vw8-z_Yf7D5Ff-zD_yQ7pW-u_Ew8_9vP0_Vw'
+                    });
+                    console.log('FCM token:', token);
+                    return token;
+                } else {
+                    console.warn('Notification permission denied.');
+                    return null;
+                }
+            } catch (error) {
+                console.error('Error getting FCM token:', error);
+                return null;
+            }
+        }
+
+        async function saveDeviceToken(token) {
+            const userId = auth.currentUser.uid;
+            await set(ref(db, `device_tokens/${userId}`), token);
+            console.log('Device token saved successfully.');
+        }
+
+        async function sendNotificationToManager(managerId, message) {
+            const managerTokenSnapshot = await get(ref(db, `device_tokens/${managerId}`));
+            const managerToken = managerTokenSnapshot.val();
+
+            if (managerToken) {
+                const payload = {
+                    token: managerToken,
+                    notification: {
+                        title: 'New Task Submission! 🔔',
+                        body: message
+                    }
+                };
+                // In a real app, you would send this payload to your backend server
+                // which would then use a server-side SDK to send the message via FCM.
+                // For this example, we'll just log it.
+                console.log('Sending notification to manager:', payload);
+            }
+        }
+        
+        async function sendNotificationToEmployee(employeeId, message) {
+            const employeeTokenSnapshot = await get(ref(db, `device_tokens/${employeeId}`));
+            const employeeToken = employeeTokenSnapshot.val();
+            
+            if (employeeToken) {
+                const payload = {
+                    token: employeeToken,
+                    notification: {
+                        title: 'Task Update!',
+                        body: message
+                    }
+                };
+                // Same as above, this should be handled by a backend server
+                console.log('Sending notification to employee:', payload);
+            }
+        }
+
+        // Listen for incoming messages while the app is in the foreground
+        onMessage(messaging, (payload) => {
+            console.log('Foreground message received.', payload);
+            const notificationTitle = payload.notification.title;
+            const notificationOptions = {
+                body: payload.notification.body,
+                icon: 'path/to/your/app/logo.png'
+            };
+            new Notification(notificationTitle, notificationOptions);
+        });
 
         // Authentication and User State Management
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 authPages.classList.add('d-none');
                 mainApp.classList.remove('d-none');
+                
                 const userRef = ref(db, `users/${user.uid}`);
                 const snapshot = await get(userRef);
                 let userData = snapshot.val();
                 
-                // Set default admin role on first login if email matches
                 if (user.email === 'admin2025@gmail.com' && (!userData || userData.role !== 'admin')) {
-                     await set(userRef, {
+                    await set(userRef, {
                         name: 'Admin',
                         email: 'admin2025@gmail.com',
-                        role: 'admin'
+                        role: 'admin',
+                        employeeId: 'ADMIN001'
                     });
                     user.role = 'admin';
-                    userData = { name: 'Admin', role: 'admin' };
+                    userData = { name: 'Admin', email: 'admin2025@gmail.com', role: 'admin', employeeId: 'ADMIN001' };
                 } else if (userData) {
                     user.role = userData.role || 'employee';
                 } else {
@@ -693,8 +1026,16 @@
                 }
                 
                 userDisplayName.textContent = userData ? userData.name : user.displayName;
+                await fetchAllUsers();
                 await updateUIBasedOnRole(user.role);
                 showPage('dashboard-page');
+
+                // Request notification permission and save token on login
+                const token = await requestPermissionAndGetToken();
+                if (token) {
+                    await saveDeviceToken(token);
+                }
+
             } else {
                 authPages.classList.remove('d-none');
                 mainApp.classList.add('d-none');
@@ -708,59 +1049,102 @@
             forgotPasswordPage.classList.add('d-none');
             document.getElementById(pageId).classList.remove('d-none');
         }
+        
+        async function fetchAllUsers() {
+            const snapshot = await get(usersRef);
+            allUsersData = snapshot.val() || {};
+        }
+
+        async function getUserNameById(uid) {
+            if (allUsersData[uid]) {
+                return allUsersData[uid].name;
+            }
+            const userSnapshot = await get(child(usersRef, uid));
+            if (userSnapshot.exists()) {
+                const userData = userSnapshot.val();
+                allUsersData[uid] = userData;
+                return userData.name;
+            }
+            return 'Unknown User';
+        }
 
         async function updateUIBasedOnRole(role) {
             document.querySelectorAll('.employee-only, .manager-only, .admin-only').forEach(el => el.classList.add('d-none'));
             document.querySelectorAll('.sidebar a').forEach(link => link.classList.remove('active'));
             
             dashboardContent.innerHTML = '';
+            const reviewTasksMenuItem = document.querySelector('[data-page="review-tasks-page"]');
 
             if (role === 'admin') {
                 document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('d-none'));
                 await loadAdminDashboard();
             } else if (role === 'manager') {
                 document.querySelectorAll('.manager-only').forEach(el => el.classList.remove('d-none'));
+                
+                // Set up real-time listener for pending tasks
+                onValue(tasksForApprovalRef, (snapshot) => {
+                    const tasksData = snapshot.val() || {};
+                    const hasPendingTasks = Object.values(tasksData).some(task => task.status === 'pending-approval');
+                    if (hasPendingTasks) {
+                        reviewTasksNotification.classList.remove('d-none');
+                    } else {
+                        reviewTasksNotification.classList.add('d-none');
+                    }
+                });
+
                 await loadManagerDashboard();
             } else { // employee
                 document.querySelectorAll('.employee-only').forEach(el => el.classList.remove('d-none'));
-                dashboardContent.innerHTML = `<h3>Hello, ${userDisplayName.textContent}! 👋</h3><p>Welcome to the Employee Dashboard. Use the navigation to see your tasks.</p>`;
-                await loadTasks('tasks-page');
+                dashboardContent.innerHTML = `
+                    <h3 class="mb-4">Hello, ${userDisplayName.textContent}! 👋</h3>
+                    <div class="card p-4">
+                        <div class="card-header bg-white">
+                            <h4 class="card-title">Your Team's Today's Progress</h4>
+                        </div>
+                        <div class="card-body" id="employee-dashboard-progress">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span><strong>DHRUV PANCHAL</strong></span>
+                                <span>6 / 6 Tasks Completed</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                await loadTasks();
             }
         }
         
         // --- Event Listeners ---
-        // Auth Page Navigation
         document.getElementById('create-account-link').addEventListener('click', (e) => { e.preventDefault(); showAuthPage('register-page'); });
         document.getElementById('back-to-login-link').addEventListener('click', (e) => { e.preventDefault(); showAuthPage('login-page'); });
         document.getElementById('forgot-password-link').addEventListener('click', (e) => { e.preventDefault(); showAuthPage('forgot-password-page'); });
         document.getElementById('back-to-login-link2').addEventListener('click', (e) => { e.preventDefault(); showAuthPage('login-page'); });
-
-        // Sidebar Navigation
+        
         sidebarMenu.addEventListener('click', (e) => {
             const link = e.target.closest('a');
             if (link && link.dataset.page) {
                 e.preventDefault();
                 const pageId = link.dataset.page;
                 showPage(pageId);
-                // Load data for the selected page
-                if (pageId === 'tasks-page') loadTasks(pageId);
-                if (pageId === 'history-page') loadHistory(pageId);
+                // Dynamically load page content
+                if (pageId === 'tasks-page') loadTasks();
+                if (pageId === 'certificates-page') loadCertificates();
                 if (pageId === 'create-team-page') loadEmployeesForTeam();
                 if (pageId === 'assign-tasks-page') loadManagerTeamForAssign();
+                if (pageId === 'assign-tasks-admin-page') loadAllUsersForAdminAssign();
                 if (pageId === 'review-tasks-page') loadPendingTasks();
+                if (pageId === 'manager-task-history-page') loadManagerTaskHistory();
+                if (pageId === 'admin-task-history-page') loadAllTaskHistory();
                 if (pageId === 'admin-panel-page') loadAllUsersForAdmin();
                 if (pageId === 'profile-page') loadProfile();
             }
         });
-
-        // Sidebar Toggle for Mobile
-        sidebarToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
+        
+        sidebarToggle.addEventListener('click', toggleSidebar);
+        
+        sidebarCloseBtn.addEventListener('click', () => {
+            sidebar.classList.add('collapsed');
         });
 
-        // --- Core Functionality ---
-
-        // Login
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = loginForm['login-email'].value;
@@ -771,27 +1155,26 @@
                 showAlert(loginAlertContainer, `Login failed: ${error.message}`);
             }
         });
-
-        // Register
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = registerForm['register-name'].value;
+            const employeeId = registerForm['register-employee-id'].value;
             const location = registerForm['register-location'].value;
             const project = registerForm['register-project'].value;
             const mobile = registerForm['register-mobile'].value;
             const email = registerForm['register-email'].value;
             const password = registerForm['register-password'].value;
-
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
                 await set(ref(db, `users/${user.uid}`), {
                     name: name,
+                    employeeId: employeeId,
                     location: location,
                     project: project,
                     mobile: mobile,
                     email: email,
-                    role: 'employee' // Default role
+                    role: 'employee'
                 });
                 await updateProfile(user, { displayName: name });
                 showAlert(registerAlertContainer, 'Account created successfully! Please log in.', 'success');
@@ -800,8 +1183,6 @@
                 showAlert(registerAlertContainer, `Registration failed: ${error.message}`);
             }
         });
-
-        // Forgot Password
         forgotPasswordForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = forgotPasswordForm['forgot-password-email'].value;
@@ -812,128 +1193,263 @@
                 showAlert(forgotPasswordAlertContainer, `Error: ${error.message}`);
             }
         });
-
-        // Logout
         logoutBtn.addEventListener('click', () => signOut(auth));
 
         // Employee Task Management
         async function loadTasks() {
             tasksList.innerHTML = '<p class="text-center">Loading tasks...</p>';
             const userId = auth.currentUser.uid;
-            const today = getCurrentDate();
-            const tasksRef = ref(db, 'assigned_tasks');
+            
+            onValue(assignedTasksRef, async (assignedSnapshot) => {
+                onValue(tasksForApprovalRef, async (pendingSnapshot) => {
+                    const assignedTasksData = assignedSnapshot.val() || {};
+                    const pendingTasksData = pendingSnapshot.val() || {};
+                    
+                    const allTasks = [];
+                    Object.entries(assignedTasksData).forEach(([key, task]) => {
+                        if (task.userId === userId) {
+                            allTasks.push({ taskId: key, ...task, type: 'assigned' });
+                        }
+                    });
+                    Object.entries(pendingTasksData).forEach(([key, task]) => {
+                        if (task.userId === userId) {
+                            allTasks.push({ taskId: key, ...task, type: 'pending' });
+                        }
+                    });
+                    
+                    tasksList.innerHTML = '';
+                    if (allTasks.length > 0) {
+                        const tasksByDate = {};
+                        for (const task of allTasks) {
+                            const date = task.date;
+                            if (!tasksByDate[date]) {
+                                tasksByDate[date] = {
+                                    assignedTasks: [],
+                                    pendingTasks: [],
+                                    assignedBy: task.managerId || 'admin2025@gmail.com'
+                                };
+                            }
+                            if (task.type === 'assigned') {
+                                tasksByDate[date].assignedTasks.push(task);
+                            } else if (task.type === 'pending') {
+                                tasksByDate[date].pendingTasks.push(task);
+                            }
+                        }
 
-            onValue(tasksRef, (snapshot) => {
-                const tasksData = snapshot.val();
-                let hasTasks = false;
-                tasksList.innerHTML = '';
-                if (tasksData) {
-                    const filteredTasks = Object.entries(tasksData).filter(([key, task]) => 
-                        task.userId === userId && task.date === today && task.status === 'approved'
-                    );
-
-                    if (filteredTasks.length > 0) {
-                        hasTasks = true;
-                        filteredTasks.forEach(([taskId, task]) => {
-                            const card = document.createElement('div');
-                            card.className = 'col-lg-6 mb-4';
-                            card.innerHTML = `
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <h5 class="card-title">Targets:</h5>
-                                        <ul class="list-group list-group-flush mb-3">
-                                            ${task.targets.map(t => `<li class="list-group-item">${t}</li>`).join('')}
-                                        </ul>
-                                        <p><strong>Status:</strong> <span class="badge bg-${task.completed ? 'success' : 'warning'}">${task.completed ? 'Completed' : 'Pending'}</span></p>
-                                        ${!task.completed ? `<button class="btn btn-primary btn-sm mark-complete-btn" data-id="${taskId}">Mark as Complete</button>` : ''}
+                        const sortedDates = Object.keys(tasksByDate).sort().reverse();
+                        
+                        for (const date of sortedDates) {
+                            const dateSection = document.createElement('div');
+                            dateSection.className = 'col-12 mb-4';
+                            const isToday = date === getCurrentDate();
+                            const assignedByName = await getUserNameById(tasksByDate[date].assignedBy);
+                            
+                            dateSection.innerHTML = `
+                                <div class="card">
+                                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                        <h4 class="mb-0">${isToday ? 'Today' : date}</h4>
+                                        <small>Assigned by: ${assignedByName}</small>
                                     </div>
+                                    <ul class="list-group list-group-flush">
+                                        ${tasksByDate[date].assignedTasks.map(task => {
+                                            let targetsHtml = '';
+                                            if (typeof task.targets === 'object' && !Array.isArray(task.targets)) {
+                                                targetsHtml = Object.entries(task.targets).map(([targetId, target]) => `
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <span class="badge bg-${getPriorityColor(target.priority)}">${target.priority} Priority</span>
+                                                            <span class="${target.completed ? 'text-decoration-line-through text-muted' : ''}">${target.description}</span>
+                                                        </div>
+                                                        <div class="text-end">
+                                                            <span class="badge bg-${target.completed ? 'success' : 'warning'} me-2">${target.completed ? 'Completed' : 'Pending'}</span>
+                                                            ${!target.completed ? `<button class="btn btn-sm btn-primary mark-target-btn" data-task-id="${task.taskId}" data-target-id="${targetId}">Mark Complete</button>` : ''}
+                                                        </div>
+                                                    </li>
+                                                `).join('');
+                                            }
+                                            return targetsHtml;
+                                        }).join('')}
+                                        ${tasksByDate[date].pendingTasks.map(task => `
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="badge bg-secondary">Self-Assigned</span>
+                                                    <span>${task.task}</span>
+                                                </div>
+                                                <span class="badge bg-info">${task.status === 'pending-approval' ? 'Pending Approval' : task.status}</span>
+                                            </li>
+                                        `).join('')}
+                                    </ul>
                                 </div>
                             `;
-                            tasksList.appendChild(card);
-                        });
+                            tasksList.appendChild(dateSection);
+                        }
 
-                        document.querySelectorAll('.mark-complete-btn').forEach(button => {
+                        document.querySelectorAll('.mark-target-btn').forEach(button => {
                             button.addEventListener('click', async (e) => {
-                                const taskId = e.target.dataset.id;
-                                const taskRef = ref(db, `assigned_tasks/${taskId}`);
-                                await update(taskRef, { completed: true });
-                                showAlert(document.getElementById('tasks-page'), 'Task status updated!', 'success');
+                                const taskId = e.target.dataset.taskId;
+                                const targetId = e.target.dataset.targetId;
+                                const targetRef = ref(db, `assigned_tasks/${taskId}/targets/${targetId}`);
+                                await update(targetRef, { completed: true });
+                                
+                                // Find the manager ID to send notification
+                                const taskSnapshot = await get(ref(db, `assigned_tasks/${taskId}`));
+                                const taskData = taskSnapshot.val();
+                                if (taskData && taskData.managerId) {
+                                    sendNotificationToManager(taskData.managerId, `${userDisplayName.textContent} has completed a task!`);
+                                }
                             });
                         });
+                    } else {
+                        tasksList.innerHTML = '<div class="col-12"><p class="text-center">No tasks assigned or pending.</p></div>';
                     }
-                }
-                if (!hasTasks) {
-                    tasksList.innerHTML = '<div class="col-12"><p class="text-center">No tasks assigned for today. Go to the dashboard or add your own.</p></div>';
-                }
+                });
             });
         }
         
-        // Employee Task History
-        async function loadHistory() {
-            historyList.innerHTML = '<p class="text-center">Loading history...</p>';
+        // Employee Certificates
+        async function loadCertificates() {
+            certificateHistoryList.innerHTML = '<p class="text-center">Loading certificates...</p>';
+            certificateModalContainer.classList.add('d-none');
             const userId = auth.currentUser.uid;
-            const tasksRef = ref(db, 'assigned_tasks');
-            
-            onValue(tasksRef, async (snapshot) => {
-                const tasksData = snapshot.val();
-                const userTasks = Object.entries(tasksData || {}).filter(([key, task]) => task.userId === userId);
-                
-                if (userTasks.length > 0) {
-                    const tasksByDate = userTasks.reduce((acc, [taskId, task]) => {
-                        (acc[task.date] = acc[task.date] || []).push({ taskId, ...task });
-                        return acc;
-                    }, {});
+            const certsRef = ref(db, `certificates/${userId}`);
 
-                    historyList.innerHTML = '';
-                    for (const date in tasksByDate) {
-                        const dateSection = document.createElement('div');
-                        dateSection.className = 'col-12 mb-4';
-                        dateSection.innerHTML = `
-                            <div class="card">
-                                <div class="card-header bg-primary text-white">
-                                    <h4 class="mb-0">${date}</h4>
-                                </div>
-                                <ul class="list-group list-group-flush">
-                                    ${tasksByDate[date].map(task => `
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <p class="mb-1 fw-bold">Targets:</p>
-                                                <ul>
-                                                    ${task.targets.map(t => `<li>${t}</li>`).join('')}
-                                                </ul>
-                                            </div>
-                                            <span class="badge bg-${task.completed ? 'success' : 'warning'}">${task.completed ? 'Completed' : 'Pending'}</span>
-                                        </li>
-                                    `).join('')}
-                                </ul>
+            const snapshot = await get(certsRef);
+            const certsData = snapshot.val();
+
+            if (certsData) {
+                let count = 0;
+                certificateHistoryList.innerHTML = `<p class="fw-bold">Total Certificates: ${Object.keys(certsData).length}</p><hr>`;
+                
+                Object.entries(certsData).forEach(([certId, cert]) => {
+                    count++;
+                    const card = document.createElement('div');
+                    card.className = 'card mb-3';
+                    card.innerHTML = `
+                        <div class="card-body d-flex justify-content-between align-items-center">
+                            <span>Certificate #${count} - ${cert.date}</span>
+                            <div>
+                                <button class="btn btn-sm btn-info view-cert-btn me-2" data-cert='${JSON.stringify(cert)}'>View</button>
+                                <button class="btn btn-sm btn-primary download-cert-btn" data-cert='${JSON.stringify(cert)}'>Download</button>
                             </div>
-                        `;
-                        historyList.appendChild(dateSection);
-                    }
-                } else {
-                    historyList.innerHTML = '<div class="col-12"><p class="text-center">No task history found.</p></div>';
-                }
-            });
+                        </div>
+                    `;
+                    certificateHistoryList.appendChild(card);
+                });
+                
+                document.querySelectorAll('.view-cert-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const cert = JSON.parse(e.target.dataset.cert);
+                        showCertificate(cert);
+                    });
+                });
+                document.querySelectorAll('.download-cert-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const cert = JSON.parse(e.target.dataset.cert);
+                        downloadCertificate(cert);
+                    });
+                });
+            } else {
+                certificateHistoryList.innerHTML = '<p class="text-center">You have not received any certificates yet.</p>';
+            }
         }
         
+        function showCertificate(certData) {
+            certEmployeeName.textContent = `Mr./Ms. ${certData.employeeName}`;
+            certMonth.textContent = getMonthName(certData.date);
+            certDate.textContent = getCurrentDate();
+            certificateModalContainer.classList.remove('d-none');
+            currentCertData = certData;
+        }
+
+        closeCertModalBtn.addEventListener('click', () => {
+            certificateModalContainer.classList.add('d-none');
+        });
+        downloadCertModalBtn.addEventListener('click', () => {
+            if(currentCertData) {
+                downloadCertificate(currentCertData);
+            }
+        });
+
         // Employee Add Task
+        function createEmployeeTargetInputGroup(count) {
+            const container = document.createElement('div');
+            container.className = 'mb-3 employee-target-input-group';
+            container.innerHTML = `
+                <label for="employee-task-1" class="form-label">Task 1</label>
+                <div class="input-group">
+                    <input type="text" class="form-control employee-task-input" required>
+                    <button class="btn btn-outline-danger employee-remove-target-btn" type="button" disabled><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `;
+            return container;
+        }
+
+        addEmployeeTargetBtn.addEventListener('click', () => {
+            const targetCount = employeeTargetsContainer.querySelectorAll('.employee-target-input-group').length + 1;
+            employeeTargetsContainer.appendChild(createEmployeeTargetInputGroup(targetCount));
+            updateRemoveButtons(employeeTargetsContainer);
+        });
+
+        employeeTargetsContainer.addEventListener('click', (e) => {
+            if (e.target.closest('.employee-remove-target-btn')) {
+                const targetGroup = e.target.closest('.employee-target-input-group');
+                if (employeeTargetsContainer.querySelectorAll('.employee-target-input-group').length > 1) {
+                    targetGroup.remove();
+                    updateRemoveButtons(employeeTargetsContainer);
+                }
+            }
+        });
+
         addTaskForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const user = auth.currentUser;
-            const taskText = document.getElementById('employee-task-input').value;
+            const taskInputs = employeeTargetsContainer.querySelectorAll('.employee-task-input');
+            const tasks = Array.from(taskInputs).map(input => input.value.trim()).filter(Boolean);
+
+            if (tasks.length === 0) {
+                showAlert(addTaskAlertContainer, 'Please add at least one task.', 'danger');
+                return;
+            }
 
             try {
-                const newTaskRef = push(ref(db, 'employee_tasks_for_approval'));
-                await set(newTaskRef, {
-                    userId: user.uid,
-                    task: taskText,
-                    status: 'pending-approval',
-                    date: getCurrentDate()
-                });
-                showAlert(addTaskAlertContainer, 'Task submitted for approval!', 'success');
+                // Find manager for the current user
+                const usersSnapshot = await get(ref(db, 'users'));
+                const usersData = usersSnapshot.val();
+                let managerId = null;
+                for (const mId in usersData) {
+                    const teamSnapshot = await get(ref(db, `teams/${mId}`));
+                    const team = teamSnapshot.val() || {};
+                    if (Object.values(team).includes(user.uid)) {
+                        managerId = mId;
+                        break;
+                    }
+                }
+                
+                for (const task of tasks) {
+                    const newTaskRef = push(tasksForApprovalRef);
+                    await set(newTaskRef, {
+                        userId: user.uid,
+                        task: task,
+                        status: 'pending-approval',
+                        date: getCurrentDate(),
+                        submittedBy: {
+                            name: user.displayName,
+                            uid: user.uid
+                        }
+                    });
+                }
+
+                // Send notification to manager
+                if (managerId) {
+                    sendNotificationToManager(managerId, `${userDisplayName.textContent} has submitted new tasks for your approval.`);
+                }
+                
+                showAlert(addTaskAlertContainer, 'Tasks submitted for approval!', 'success');
                 addTaskForm.reset();
+                employeeTargetsContainer.innerHTML = createEmployeeTargetInputGroup(1).outerHTML;
+                updateRemoveButtons(employeeTargetsContainer);
             } catch (error) {
-                showAlert(addTaskAlertContainer, `Failed to submit task: ${error.message}`);
+                showAlert(addTaskAlertContainer, `Failed to submit tasks: ${error.message}`);
             }
         });
 
@@ -958,50 +1474,115 @@
             const today = getCurrentDate();
             
             const teamRef = ref(db, `teams/${managerId}`);
-            const tasksRef = ref(db, 'assigned_tasks');
-            const usersRef = ref(db, 'users');
 
             onValue(teamRef, async (teamSnapshot) => {
-                const teamUids = Object.values(teamSnapshot.val() || {});
+                const teamData = teamSnapshot.val() || {};
+                const teamUids = Object.values(teamData);
                 if (teamUids.length === 0) {
                     managerProgressList.innerHTML = '<p class="text-center">You have no team members. Go to "My Team" to add them.</p>';
                     return;
                 }
                 
-                const usersSnapshot = await get(usersRef);
-                const usersData = usersSnapshot.val();
-                
-                onValue(tasksRef, (tasksSnapshot) => {
-                    const tasksData = tasksSnapshot.val();
+                onValue(assignedTasksRef, async (tasksSnapshot) => {
+                    const tasksData = tasksSnapshot.val() || {};
                     let outputHtml = '';
                     
-                    teamUids.forEach(uid => {
-                        const user = usersData[uid];
-                        if (!user) return;
+                    for (const uid of teamUids) {
+                        const user = allUsersData[uid];
+                        if (!user) continue;
                         
-                        const userTasks = Object.values(tasksData || {}).filter(t => t.userId === uid && t.date === today);
-                        const completedCount = userTasks.filter(t => t.completed).length;
-                        const totalCount = userTasks.length;
+                        const userTasks = Object.values(tasksData).filter(t => t.userId === uid && t.date === today);
+                        let completedCount = 0;
+                        let totalCount = 0;
+                        userTasks.forEach(task => {
+                            if (task.targets) {
+                                Object.values(task.targets).forEach(target => {
+                                    totalCount++;
+                                    if (target.completed) completedCount++;
+                                });
+                            }
+                        });
                         
                         outputHtml += `
-                            <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
                                 <span><strong>${user.name}</strong></span>
                                 <span>${completedCount} / ${totalCount} Tasks Completed</span>
                             </div>
                         `;
-                    });
+                    }
                     
                     managerProgressList.innerHTML = outputHtml || '<p class="text-center">No tasks assigned to your team today.</p>';
                 });
             });
         }
+        
+        async function loadManagerTaskHistory() {
+            managerHistoryList.innerHTML = '<p class="text-center">Loading task history...</p>';
+            const managerId = auth.currentUser.uid;
+            const teamRef = ref(db, `teams/${managerId}`);
+        
+            const teamSnapshot = await get(teamRef);
+            const teamUids = Object.values(teamSnapshot.val() || {});
+        
+            if (teamUids.length === 0) {
+                managerHistoryList.innerHTML = '<p class="text-center">You have no team members. Go to "My Team" to add them.</p>';
+                return;
+            }
+        
+            onValue(assignedTasksRef, async (tasksSnapshot) => {
+                const tasksData = tasksSnapshot.val();
+                let outputHtml = '';
+                const tasksByUserAndDate = {};
+        
+                Object.entries(tasksData || {}).forEach(([taskId, task]) => {
+                    if (teamUids.includes(task.userId)) {
+                        const userKey = `${task.userId}_${task.date}`;
+                        if (!tasksByUserAndDate[userKey]) {
+                            tasksByUserAndDate[userKey] = {
+                                userName: allUsersData[task.userId]?.name || 'Unknown User',
+                                date: task.date,
+                                assignedBy: task.managerId,
+                                tasks: []
+                            };
+                        }
+                        tasksByUserAndDate[userKey].tasks.push({ taskId, ...task });
+                    }
+                });
+        
+                const sortedUserDates = Object.keys(tasksByUserAndDate).sort((a, b) => {
+                    const dateA = tasksByUserAndDate[a].date;
+                    const dateB = tasksByUserAndDate[b].date;
+                    return dateB.localeCompare(dateA);
+                });
+                
+                for (const userDateKey of sortedUserDates) {
+                    const group = tasksByUserAndDate[userDateKey];
+                    const assignedByName = await getUserNameById(group.assignedBy);
+                    outputHtml += `<div class="col-12 mb-4"><div class="card"><div class="card-header bg-secondary text-white"><h4 class="mb-0">${group.userName} - ${group.date}</h4><small>Assigned by: ${assignedByName}</small></div><ul class="list-group list-group-flush">`;
+                    
+                    group.tasks.forEach(task => {
+                        Object.values(task.targets).forEach(target => {
+                            outputHtml += `
+                                <li class="list-group-item">
+                                    <span class="badge bg-${getPriorityColor(target.priority)} me-2">${target.priority}</span>
+                                    ${target.description} 
+                                    <span class="badge bg-${target.completed ? 'success' : 'warning'} ms-2">${target.completed ? 'Completed' : 'Pending'}</span>
+                                </li>
+                            `;
+                        });
+                    });
+                    outputHtml += '</ul></div></div>';
+                }
+        
+                managerHistoryList.innerHTML = outputHtml || '<p class="text-center">No task history found for your team.</p>';
+            });
+        }
 
         // Manager Create Team
         async function loadEmployeesForTeam() {
-            const allUsersRef = ref(db, 'users');
             teamMembersSelect.innerHTML = '';
             
-            const snapshot = await get(allUsersRef);
+            const snapshot = await get(usersRef);
             const usersData = snapshot.val();
             const employees = Object.entries(usersData || {}).filter(([uid, user]) => user.role === 'employee');
 
@@ -1025,16 +1606,13 @@
             
             if (teamData) {
                 const teamMemberUids = Object.values(teamData);
-                const usersRef = ref(db, 'users');
-                const usersSnapshot = await get(usersRef);
-                const usersData = usersSnapshot.val();
                 
                 teamMemberUids.forEach(uid => {
-                    if (usersData[uid]) {
+                    if (allUsersData[uid]) {
                         const li = document.createElement('li');
                         li.className = 'list-group-item d-flex justify-content-between align-items-center';
                         li.innerHTML = `
-                            ${usersData[uid].name} - ${usersData[uid].location || 'N/A'} (${usersData[uid].project || 'N/A'})
+                            ${allUsersData[uid].name} - ${allUsersData[uid].location || 'N/A'} (${allUsersData[uid].project || 'N/A'})
                             <button class="btn btn-sm btn-outline-danger remove-member-btn" data-id="${uid}">
                                 <i class="fa-solid fa-user-minus"></i> Remove
                             </button>
@@ -1070,36 +1648,48 @@
             
             if (teamData) {
                 const teamMemberUids = Object.values(teamData);
-                const usersRef = ref(db, 'users');
-                const usersSnapshot = await get(usersRef);
-                const usersData = usersSnapshot.val();
                 
                 teamMemberUids.forEach(uid => {
-                    if (usersData[uid]) {
+                    if (allUsersData[uid]) {
                         const option = document.createElement('option');
                         option.value = uid;
-                        option.textContent = `${usersData[uid].name} - ${usersData[uid].location || 'N/A'} (${usersData[uid].project || 'N/A'})`;
+                        option.textContent = `${allUsersData[uid].name} - ${allUsersData[uid].location || 'N/A'} (${allUsersData[uid].project || 'N/A'})`;
                         assignTeamMemberSelect.appendChild(option);
                     }
                 });
             } else {
                 showAlert(document.getElementById('assign-tasks-alert-container'), 'You have no team members assigned. Go to My Team to create one.', 'warning');
             }
+            updateRemoveButtons(targetsContainer);
+        }
+
+        function createTargetInputGroup(count) {
+            const container = document.createElement('div');
+            container.className = 'mb-3 target-input-group';
+            container.innerHTML = `
+                <label for="target-${count}" class="form-label">Task ${count}</label>
+                <div class="input-group">
+                    <input type="text" class="form-control target-input" required>
+                    <select class="form-select priority-select">
+                        <option value="low">Low Priority</option>
+                        <option value="medium" selected>Medium Priority</option>
+                        <option value="high">High Priority</option>
+                    </select>
+                    <button class="btn btn-outline-danger remove-target-btn" type="button" disabled><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `;
+            return container;
         }
 
         addTargetBtn.addEventListener('click', () => {
             const targetCount = targetsContainer.querySelectorAll('.target-input-group').length + 1;
-            const newTargetGroup = document.createElement('div');
-            newTargetGroup.className = 'mb-3 target-input-group';
-            newTargetGroup.innerHTML = `
-                <label for="target-${targetCount}" class="form-label">Target ${targetCount}</label>
-                <div class="input-group">
-                    <input type="text" class="form-control target-input" required>
-                    <button class="btn btn-outline-danger remove-target-btn" type="button"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            `;
-            targetsContainer.appendChild(newTargetGroup);
-            updateRemoveButtons();
+            targetsContainer.appendChild(createTargetInputGroup(targetCount));
+            updateRemoveButtons(targetsContainer);
+        });
+        addTargetAdminBtn.addEventListener('click', () => {
+            const targetCount = targetsAdminContainer.querySelectorAll('.target-input-group').length + 1;
+            targetsAdminContainer.appendChild(createTargetInputGroup(targetCount));
+            updateRemoveButtons(targetsAdminContainer);
         });
 
         targetsContainer.addEventListener('click', (e) => {
@@ -1107,80 +1697,99 @@
                 const targetGroup = e.target.closest('.target-input-group');
                 if (targetsContainer.querySelectorAll('.target-input-group').length > 1) {
                     targetGroup.remove();
-                    updateRemoveButtons();
+                    updateRemoveButtons(targetsContainer);
+                }
+            }
+        });
+        targetsAdminContainer.addEventListener('click', (e) => {
+            if (e.target.closest('.remove-target-btn')) {
+                const targetGroup = e.target.closest('.target-input-group');
+                if (targetsAdminContainer.querySelectorAll('.target-input-group').length > 1) {
+                    targetGroup.remove();
+                    updateRemoveButtons(targetsAdminContainer);
                 }
             }
         });
 
-        function updateRemoveButtons() {
-            const removeBtns = targetsContainer.querySelectorAll('.remove-target-btn');
-            removeBtns.forEach(btn => {
-                btn.disabled = removeBtns.length === 1;
-            });
-        }
-        updateRemoveButtons();
+        assignTasksForm.addEventListener('submit', (e) => handleTaskAssignment(e, 'assign-tasks-alert-container', assignTeamMemberSelect.value, assignDateInput.value, targetsContainer));
+        assignTasksAdminForm.addEventListener('submit', (e) => handleTaskAssignment(e, 'assign-tasks-admin-alert-container', assignUserAdminSelect.value, assignDateAdminInput.value, targetsAdminContainer));
 
-        assignTasksForm.addEventListener('submit', async (e) => {
+        async function handleTaskAssignment(e, alertContainerId, userId, assignDate, targetsContainer) {
             e.preventDefault();
             const managerId = auth.currentUser.uid;
-            const userId = assignTeamMemberSelect.value;
-            const targets = Array.from(targetsContainer.querySelectorAll('.target-input')).map(input => input.value.trim()).filter(Boolean);
-            const assignDate = assignDateInput.value;
+            const targetInputs = targetsContainer.querySelectorAll('.target-input-group');
+            const targets = {};
+            targetInputs.forEach((group, index) => {
+                const description = group.querySelector('.target-input').value.trim();
+                const priority = group.querySelector('.priority-select').value;
+                if (description) {
+                    const targetId = push(ref(db, 'temp')).key;
+                    targets[targetId] = {
+                        description,
+                        priority,
+                        completed: false
+                    };
+                }
+            });
             
-            if (targets.length === 0) {
-                showAlert(document.getElementById('assign-tasks-alert-container'), 'Please add at least one target.', 'danger');
+            if (Object.keys(targets).length === 0) {
+                showAlert(document.getElementById(alertContainerId), 'Please add at least one target.', 'danger');
                 return;
             }
 
             try {
-                const newTaskId = push(ref(db, 'assigned_tasks')).key;
+                const newTaskId = push(assignedTasksRef).key;
                 await set(ref(db, `assigned_tasks/${newTaskId}`), {
                     managerId: managerId,
                     userId: userId,
                     targets: targets,
                     date: assignDate,
-                    completed: false,
                     status: 'approved'
                 });
-                showAlert(document.getElementById('assign-tasks-alert-container'), 'Tasks assigned successfully!', 'success');
-                assignTasksForm.reset();
-                assignDateInput.value = getCurrentDate();
-                targetsContainer.innerHTML = `
-                    <div class="mb-3 target-input-group">
-                        <label for="target-1" class="form-label">Target 1</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control target-input" required>
-                            <button class="btn btn-outline-danger remove-target-btn" type="button" disabled><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                    </div>
-                `;
+                showAlert(document.getElementById(alertContainerId), 'Tasks assigned successfully!', 'success');
+                e.target.reset();
+                targetsContainer.innerHTML = createTargetInputGroup(1).outerHTML;
+                updateRemoveButtons(targetsContainer);
             } catch (error) {
-                showAlert(document.getElementById('assign-tasks-alert-container'), `Failed to assign tasks: ${error.message}`, 'danger');
+                showAlert(document.getElementById(alertContainerId), `Failed to assign tasks: ${error.message}`, 'danger');
             }
-        });
+        }
+        
+        // Admin Assign Tasks Page
+        async function loadAllUsersForAdminAssign() {
+            assignUserAdminSelect.innerHTML = '<option value="" disabled selected>Select a User</option>';
+            assignDateAdminInput.value = getCurrentDate();
+            
+            const snapshot = await get(usersRef);
+            const usersData = snapshot.val();
+            
+            Object.entries(usersData || {}).forEach(([uid, user]) => {
+                const option = document.createElement('option');
+                option.value = uid;
+                option.textContent = `${user.name} (${user.role})`;
+                assignUserAdminSelect.appendChild(option);
+            });
+            updateRemoveButtons(targetsAdminContainer);
+        }
         
         // Manager Review Tasks
         async function loadPendingTasks() {
             pendingTasksList.innerHTML = '<p class="text-center">Loading pending tasks...</p>';
             const managerId = auth.currentUser.uid;
             const teamRef = ref(db, `teams/${managerId}`);
-            const pendingTasksRef = ref(db, 'employee_tasks_for_approval');
             
             const teamSnapshot = await get(teamRef);
             const teamUids = Object.values(teamSnapshot.val() || {});
-            const usersRef = ref(db, 'users');
-            const usersSnapshot = await get(usersRef);
-            const usersData = usersSnapshot.val();
-
-            onValue(pendingTasksRef, (tasksSnapshot) => {
-                const tasksData = tasksSnapshot.val();
+            
+            onValue(tasksForApprovalRef, (tasksSnapshot) => {
+                const tasksData = tasksSnapshot.val() || {};
                 let outputHtml = '';
                 let hasPending = false;
                 
-                Object.entries(tasksData || {}).forEach(([taskId, task]) => {
+                Object.entries(tasksData).forEach(([taskId, task]) => {
                     if (teamUids.includes(task.userId) && task.status === 'pending-approval') {
                         hasPending = true;
-                        const user = usersData[task.userId] || {};
+                        const user = allUsersData[task.userId] || {};
                         outputHtml += `
                             <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap mb-3">
                                 <div>
@@ -1205,28 +1814,42 @@
                         const userId = e.target.dataset.userId;
                         const taskText = e.target.dataset.task;
                         
-                        // Move to assigned_tasks
-                        const newAssignedTaskRef = push(ref(db, 'assigned_tasks'));
+                        const newAssignedTaskRef = push(assignedTasksRef);
+                        const targets = {};
+                        const newTargetId = push(ref(db, 'temp')).key;
+                        targets[newTargetId] = {
+                            description: taskText,
+                            priority: 'medium',
+                            completed: false
+                        };
+                        
                         await set(newAssignedTaskRef, {
                             managerId: managerId,
                             userId: userId,
-                            targets: [taskText],
+                            targets: targets,
                             date: getCurrentDate(),
-                            completed: false,
                             status: 'approved'
                         });
                         
-                        // Update status in employee_tasks_for_approval
-                        await update(ref(db, `employee_tasks_for_approval/${taskId}`), { status: 'approved' });
+                        await remove(child(tasksForApprovalRef, taskId));
                         showAlert(document.getElementById('review-tasks-alert-container'), 'Task approved!', 'success');
+                        
+                        // Send notification to employee
+                        sendNotificationToEmployee(userId, `Your task "${taskText}" has been approved!`);
                     });
                 });
                 
                 document.querySelectorAll('.reject-task-btn').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
                         const taskId = e.target.dataset.id;
-                        await update(ref(db, `employee_tasks_for_approval/${taskId}`), { status: 'rejected' });
+                        const taskSnapshot = await get(child(tasksForApprovalRef, taskId));
+                        const taskData = taskSnapshot.val();
+                        
+                        await update(child(tasksForApprovalRef, taskId), { status: 'rejected' });
                         showAlert(document.getElementById('review-tasks-alert-container'), 'Task rejected!', 'danger');
+                        
+                        // Send notification to employee
+                        sendNotificationToEmployee(taskData.userId, `Your task "${taskData.task}" was rejected. Please review.`);
                     });
                 });
             });
@@ -1265,8 +1888,8 @@
             unassignedList.innerHTML = '<p class="text-center">Loading...</p>';
             
             const [usersSnapshot, tasksSnapshot] = await Promise.all([
-                get(ref(db, 'users')),
-                get(ref(db, 'assigned_tasks'))
+                get(usersRef),
+                get(assignedTasksRef)
             ]);
 
             const usersData = usersSnapshot.val() || {};
@@ -1296,15 +1919,129 @@
             if (unassignedList.innerHTML === '') unassignedList.innerHTML = '<p class="text-muted text-center mt-3">All employees have been assigned tasks.</p>';
         }
 
+        async function loadAllTaskHistory() {
+            const [usersSnapshot, assignedTasksSnapshot, pendingTasksSnapshot] = await Promise.all([
+                get(usersRef),
+                get(assignedTasksRef),
+                get(tasksForApprovalRef)
+            ]);
+
+            const usersData = usersSnapshot.val() || {};
+            const assignedTasksData = assignedTasksSnapshot.val() || {};
+            const pendingTasksData = pendingTasksSnapshot.val() || {};
+
+            historyFilterUser.innerHTML = '<option value="">All Users</option>';
+            Object.entries(usersData).forEach(([uid, user]) => {
+                const option = document.createElement('option');
+                option.value = uid;
+                option.textContent = user.name;
+                historyFilterUser.appendChild(option);
+            });
+            
+            function renderHistory() {
+                let outputHtml = '';
+                const allTasks = [];
+
+                Object.entries(assignedTasksData).forEach(([taskId, task]) => {
+                    allTasks.push({ taskId, ...task, type: 'assigned' });
+                });
+
+                Object.entries(pendingTasksData).forEach(([taskId, task]) => {
+                    allTasks.push({ taskId, ...task, type: 'pending-approval' });
+                });
+
+                const filteredTasks = allTasks.filter(task => {
+                    const selectedUser = historyFilterUser.value;
+                    const selectedDate = historyFilterDate.value;
+                    let matchesUser = true;
+                    let matchesDate = true;
+
+                    if (selectedUser) {
+                        matchesUser = task.userId === selectedUser;
+                    }
+                    if (selectedDate) {
+                        matchesDate = task.date === selectedDate;
+                    }
+
+                    return matchesUser && matchesDate;
+                });
+
+                if (filteredTasks.length === 0) {
+                    adminHistoryList.innerHTML = '<p class="text-center">No tasks found for the selected filters.</p>';
+                    return;
+                }
+
+                const tasksByUserAndDate = {};
+                for (const task of filteredTasks) {
+                    const userKey = `${task.userId}_${task.date}`;
+                    if (!tasksByUserAndDate[userKey]) {
+                        tasksByUserAndDate[userKey] = {
+                            userName: usersData[task.userId]?.name || 'Unknown User',
+                            date: task.date,
+                            tasks: []
+                        };
+                    }
+                    tasksByUserAndDate[userKey].tasks.push(task);
+                }
+
+                const sortedUserDates = Object.keys(tasksByUserAndDate).sort((a, b) => {
+                    const dateA = tasksByUserAndDate[a].date;
+                    const dateB = tasksByUserAndDate[b].date;
+                    return dateB.localeCompare(dateA);
+                });
+                
+                for (const userDateKey of sortedUserDates) {
+                    const group = tasksByUserAndDate[userDateKey];
+                    outputHtml += `<div class="col-12 mb-4"><div class="card"><div class="card-header bg-secondary text-white"><h4 class="mb-0">${group.userName} - ${group.date}</h4></div><ul class="list-group list-group-flush">`;
+                    
+                    group.tasks.forEach(task => {
+                        if (task.type === 'assigned') {
+                            const assignedBy = usersData[task.managerId]?.name || 'Unknown Manager';
+                            outputHtml += `
+                                <li class="list-group-item">
+                                    <strong>Assigned By:</strong> ${assignedBy} <br>
+                                    <strong>Targets:</strong>
+                                    <ul>
+                            `;
+                            Object.values(task.targets).forEach(target => {
+                                outputHtml += `
+                                        <li>
+                                            <span class="badge bg-${getPriorityColor(target.priority)} me-2">${target.priority}</span>
+                                            ${target.description} 
+                                            <span class="badge bg-${target.completed ? 'success' : 'warning'} ms-2">${target.completed ? 'Completed' : 'Pending'}</span>
+                                        </li>
+                                `;
+                            });
+                            outputHtml += '</ul></li>';
+                        } else if (task.type === 'pending-approval') {
+                            const submittedBy = task.submittedBy?.name || 'Unknown Employee';
+                            outputHtml += `
+                                <li class="list-group-item">
+                                    <strong>Task:</strong> ${task.task} <br>
+                                    <strong>Status:</strong> <span class="badge bg-info">${task.status}</span><br>
+                                    <small class="text-muted">Submitted by: ${submittedBy}</small>
+                                </li>
+                            `;
+                        }
+                    });
+                    outputHtml += '</ul></div></div>';
+                }
+                adminHistoryList.innerHTML = outputHtml;
+            }
+
+            historyFilterUser.addEventListener('change', renderHistory);
+            historyFilterDate.addEventListener('change', renderHistory);
+            renderHistory();
+        }
+
         // Admin Panel
         async function loadAllUsersForAdmin() {
-            const allUsersRef = ref(db, 'users');
             userSelect.innerHTML = '<option value="" disabled selected>Select a User</option>';
-            employeeOfMonthSelect.innerHTML = '<option value="" disabled selected>No "Very Good" employees found</option>';
+            employeeOfMonthSelect.innerHTML = '<option value="" disabled selected>No "Excellent" employees found</option>';
 
-            const snapshot = await get(allUsersRef);
+            const snapshot = await get(usersRef);
             const usersData = snapshot.val();
-            const veryGoodEmployees = [];
+            const excellentEmployees = [];
             
             for (const [uid, user] of Object.entries(usersData || {})) {
                 const option = document.createElement('option');
@@ -1313,16 +2050,16 @@
                 userSelect.appendChild(option);
 
                 const efficiency = await getEfficiency(uid);
-                if (efficiency.rating === 'Very Good') {
+                if (efficiency.rating === 'Excellent') {
                     const certOption = document.createElement('option');
                     certOption.value = uid;
                     certOption.textContent = user.name;
                     employeeOfMonthSelect.appendChild(certOption);
-                    veryGoodEmployees.push(user);
+                    excellentEmployees.push(user);
                 }
             }
 
-            if (veryGoodEmployees.length > 0) {
+            if (excellentEmployees.length > 0) {
                 employeeOfMonthSelect.disabled = false;
             } else {
                 employeeOfMonthSelect.disabled = true;
@@ -1331,26 +2068,28 @@
         }
 
         async function getEfficiency(userId) {
-            const tasksRef = ref(db, 'assigned_tasks');
-            const tasksSnapshot = await get(tasksRef);
+            const tasksSnapshot = await get(assignedTasksRef);
             const tasksData = tasksSnapshot.val();
 
             let totalTasks = 0;
             let completedTasks = 0;
             if (tasksData) {
                 Object.values(tasksData).forEach(task => {
-                    if (task.userId === userId) {
-                        totalTasks++;
-                        if (task.completed) {
-                            completedTasks++;
-                        }
+                    if (task.userId === userId && task.targets) {
+                        Object.values(task.targets).forEach(target => {
+                            totalTasks++;
+                            if (target.completed) {
+                                completedTasks++;
+                            }
+                        });
                     }
                 });
             }
             
             const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
             let rating = 'N/A';
-            if (completionRate >= 90) rating = 'Very Good';
+            if (completionRate >= 95) rating = 'Excellent';
+            else if (completionRate >= 90) rating = 'Very Good';
             else if (completionRate >= 75) rating = 'Good';
             else if (completionRate >= 50) rating = 'Moderate';
             else if (completionRate >= 25) rating = 'Low';
@@ -1372,13 +2111,9 @@
             }
 
             userDetailsPanel.classList.remove('d-none');
-            // Load user data
-            const userRef = ref(db, `users/${selectedUserId}`);
-            const userSnapshot = await get(userRef);
-            const userData = userSnapshot.val();
+            const userData = allUsersData[selectedUserId];
             roleSelect.value = userData.role;
 
-            // Load performance metrics
             const efficiency = await getEfficiency(selectedUserId);
             
             tasksGivenCount.textContent = efficiency.totalTasks;
@@ -1386,14 +2121,14 @@
             efficiencyRate.textContent = `${efficiency.rate}%`;
             efficiencyRating.textContent = efficiency.rating;
 
-            const pendingRate = 100 - efficiency.rate;
+            const pendingRate = 100 - parseFloat(efficiency.rate);
             if (completionChart) completionChart.destroy();
             completionChart = new Chart(completionChartCtx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Completed', 'Pending'],
                     datasets: [{
-                        data: [efficiency.rate, pendingRate],
+                        data: [parseFloat(efficiency.rate), pendingRate],
                         backgroundColor: ['#198754', '#ffc107'],
                         hoverOffset: 4
                     }]
@@ -1430,6 +2165,7 @@
             try {
                 await update(userRef, { role: newRole });
                 showAlert(document.getElementById('role-alert-container'), `Role assigned to ${newRole} successfully!`, 'success');
+                allUsersData[userId].role = newRole; // Update local cache
             } catch (error) {
                 showAlert(document.getElementById('role-alert-container'), `Failed to assign role: ${error.message}`, 'danger');
             }
@@ -1439,25 +2175,63 @@
         generateCertificateBtn.addEventListener('click', async () => {
             const selectedUserId = employeeOfMonthSelect.value;
             if (!selectedUserId) {
-                showAlert(document.getElementById('admin-panel-page'), 'Please select an employee to generate the certificate.', 'warning');
+                showAlert(document.getElementById('certificate-alert-container'), 'Please select an employee to generate the certificate.', 'warning');
                 certificatePreviewContainer.classList.add('d-none');
                 return;
             }
 
-            const userRef = ref(db, `users/${selectedUserId}`);
-            const userSnapshot = await get(userRef);
-            const userData = userSnapshot.val();
+            const userData = allUsersData[selectedUserId];
 
             if (userData) {
+                currentCertData = {
+                    employeeId: selectedUserId,
+                    employeeName: userData.name,
+                    employeeEmail: userData.email,
+                    date: getCurrentDate()
+                };
+
                 certEmployeeName.textContent = `Mr./Ms. ${userData.name}`;
                 certMonth.textContent = getMonthName(getCurrentDate());
                 certDate.textContent = getCurrentDate();
+                
                 certificatePreviewContainer.classList.remove('d-none');
+                
+                const newCertRef = push(ref(db, `certificates/${selectedUserId}`));
+                await set(newCertRef, currentCertData);
+                showAlert(document.getElementById('certificate-alert-container'), 'Certificate generated and saved!', 'success');
             } else {
-                showAlert(document.getElementById('admin-panel-page'), 'Could not retrieve employee data.', 'danger');
+                showAlert(document.getElementById('certificate-alert-container'), 'Could not retrieve employee data.', 'danger');
                 certificatePreviewContainer.classList.add('d-none');
             }
         });
+
+        downloadCertBtn.addEventListener('click', () => {
+            if (currentCertData) {
+                downloadCertificate(currentCertData);
+            }
+        });
+        
+        sendCertBtn.addEventListener('click', () => {
+            if (currentCertData && currentCertData.employeeEmail) {
+                const subject = encodeURIComponent('Congratulations on Your Appreciation Certificate!');
+                const body = encodeURIComponent(`Dear ${currentCertData.employeeName},\n\nCongratulations on being recognized as the Employee of the Month for ${getMonthName(currentCertData.date)}!\n\nThis certificate is a token of our appreciation for your hard work and dedication.\n\nBest regards,\nMaheshwari Computers Pvt. Ltd.`);
+                window.location.href = `mailto:${currentCertData.employeeEmail}?subject=${subject}&body=${body}`;
+            } else {
+                showAlert(document.getElementById('certificate-alert-container'), 'Employee email not available.', 'danger');
+            }
+        });
+
+        function downloadCertificate(certData) {
+            const element = certificateContent;
+            const opt = {
+                margin: 1,
+                filename: `Certificate_${certData.employeeName}_${certData.date}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
 
         // Profile Page
         async function loadProfile() {
@@ -1467,6 +2241,7 @@
             const userData = snapshot.val();
             
             profileNameInput.value = userData.name || '';
+            profileEmployeeIdInput.value = userData.employeeId || '';
             profileMobileInput.value = userData.mobile || '';
             profileEmailInput.value = userData.email || '';
             profileLocationInput.value = userData.location || '';
@@ -1496,6 +2271,11 @@
             } catch (error) {
                 showAlert(document.getElementById('profile-alert-container'), `Failed to update profile: ${error.message}`, 'danger');
             }
+        });
+
+        // Initialize first task input for employee add task page
+        document.addEventListener('DOMContentLoaded', () => {
+            updateRemoveButtons(employeeTargetsContainer);
         });
 
     </script>
